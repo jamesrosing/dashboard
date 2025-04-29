@@ -27,8 +27,8 @@ const initialState: EntityState = {
   filteredIds: [],
   lastUpdate: Date.now(),
   trajectoryEnabled: true,
-  maxPastPositions: 20,
-  maxProjectedPositions: 10
+  maxPastPositions: 50,
+  maxProjectedPositions: 20
 };
 
 // Initialize with mock entities in development

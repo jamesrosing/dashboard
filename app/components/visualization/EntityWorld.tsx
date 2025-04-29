@@ -8,6 +8,7 @@ import { Entity, EntityType } from '../../../lib/state/entityTypes';
 import { Environment } from './Environment';
 import { EntityRenderer } from './EntityRenderer';
 import EntityTrajectories from './EntityTrajectory';
+import ClientOnly from '../shared/layout/ClientOnly';
 
 interface EntityWorldProps {
   onFpsChange?: (fps: number) => void;
@@ -15,28 +16,18 @@ interface EntityWorldProps {
 
 // Main EntityWorld container that sets up the Three.js canvas
 export const EntityWorld: React.FC<EntityWorldProps> = ({ onFpsChange }) => {
-  const [canvasInitialized, setCanvasInitialized] = useState(false);
-
-  // Only initialize canvas after component is mounted
-  useEffect(() => {
-    setCanvasInitialized(true);
-  }, []);
-
-  // If not initialized yet, return a placeholder
-  if (!canvasInitialized) {
-    return (
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black to-gray-900 flex items-center justify-center">
-        <div className="text-gray-400">Initializing 3D view...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black to-gray-900">
-      <Canvas shadows gl={{ antialias: true }}>
-        <fog attach="fog" args={['#050508', 100, 350]} />
-        <EntityWorldScene onFpsChange={onFpsChange} />
-      </Canvas>
+      <ClientOnly fallback={
+        <div className="flex items-center justify-center h-full">
+          <div className="text-gray-400">Initializing 3D view...</div>
+        </div>
+      }>
+        <Canvas shadows gl={{ antialias: true }}>
+          <fog attach="fog" args={['#050508', 100, 350]} />
+          <EntityWorldScene onFpsChange={onFpsChange} />
+        </Canvas>
+      </ClientOnly>
     </div>
   );
 };
@@ -179,21 +170,29 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
       {/* Render entity trajectories if enabled */}
       {trajectoryEnabled && (
         <>
-          {Array.from(groupedEntities.entries()).map(([type, entities]) => (
-            <EntityTrajectories 
-              key={`trajectory-${type}`}
-              entities={entities}
-              settings={{
-                historyLength: trajectorySettings.maxPastPositions,
-                pastColor: "#4caf50", // Green for past
-                futureColor: "#2196f3", // Blue for future
-                opacity: 0.7,
-                width: 0.1,
-                showFuture: true
-              }}
-              selectedEntityId={selectedEntityId}
-            />
-          ))}
+          {Array.from(groupedEntities.entries()).map(([type, entities]) => {
+            // Filter entities based on showAllTrajectories flag
+            const filteredEntities = showAllTrajectories
+              ? entities // Show all entities when toggle is on
+              : entities.filter(entity => entity.id === selectedEntityId); // Only show selected entity when toggle is off
+            
+            // Only render if there are entities to show
+            return filteredEntities.length > 0 ? (
+              <EntityTrajectories 
+                key={`trajectory-${type}`}
+                entities={filteredEntities}
+                settings={{
+                  historyLength: trajectorySettings.maxPastPositions,
+                  pastColor: "#4caf50", // Green for past
+                  futureColor: "#2196f3", // Blue for future
+                  opacity: 0.7,
+                  width: 0.1,
+                  showFuture: true
+                }}
+                selectedEntityId={selectedEntityId}
+              />
+            ) : null;
+          })}
         </>
       )}
       
@@ -210,7 +209,7 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
           anchorX="center"
           anchorY="middle"
         >
-          {`Press 'T' to ${showAllTrajectories ? 'hide' : 'show'} all trajectories`}
+          {`Press 'T' to ${showAllTrajectories ? 'show selected entity only' : 'show all trajectories'}`}
         </Text>
       </group>
     </>

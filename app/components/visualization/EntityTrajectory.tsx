@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -24,6 +24,9 @@ export const EntityTrajectory: React.FC<EntityTrajectoryProps> = ({
   entity, 
   settings
 }) => {
+  // Add a safeguard for client-side only execution
+  const isBrowser = typeof window !== 'undefined';
+  
   // Memory for animation timeouts
   const animationRef = useRef<{
     updateTimer: number | null;
@@ -106,8 +109,11 @@ export const EntityTrajectory: React.FC<EntityTrajectoryProps> = ({
   const validPastPoints = useMemo(() => ensureValidPoints(pastPoints), [pastPoints]);
   const validFuturePoints = useMemo(() => ensureValidPoints(futurePoints), [futurePoints]);
   
-  // Animate the trajectories for visual effect
+  // Modify the useFrame hook to only run on the client side
   useFrame(({ clock }) => {
+    // Skip animation during SSR
+    if (!isBrowser) return;
+    
     const currentTime = clock.getElapsedTime();
     
     // Update every 50ms for animation effects
