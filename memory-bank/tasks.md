@@ -8,45 +8,110 @@
 - [x] Review and integrate PRD requirements into implementation plan
 - [ ] Create detailed technical architecture document based on Troika approach
 
-### Phase 1: Core Visualization Engine
-- [x] Implement custom BufferGeometryUtils for efficient geometry operations
-- [x] Define entity data model with TypeScript interfaces
-- [x] Implement Redux Toolkit store with optimized entity management
-- [ ] Set up Troika with Canvas3D and basic scene
-- [ ] Implement entity facade pattern for efficient updates
-- [ ] Create camera controls (pan/zoom/rotate/orbit)
-- [ ] Establish WebSocket connection infrastructure
+### Immediate Tasks (Next 5 Days)
+- [ ] **Troika Setup**
+  - [ ] Install Troika dependencies (`troika-three-utils`, `troika-three-text`, `react-troika`)
+  - [ ] Create basic Canvas3D component
+  - [ ] Set up Three.js scene with Troika integration
+  - [ ] Implement camera controls with OrbitControls
 
-### Performance Optimization
-- [x] Begin worker thread implementation for data processing
-- [ ] Complete worker thread integration with visualization engine
-- [ ] Implement instancing for similar entity types
-- [ ] Create benchmark tests with 100+ entities
-- [ ] Optimize update frequency and batching
+- [ ] **Entity Facade Implementation**
+  - [ ] Create base `EntityFacade` class extending Object3DFacade
+  - [ ] Implement entity type-specific facades (Drone, Vehicle, Stationary)
+  - [ ] Set up instancing for similar entities
+  - [ ] Connect to Redux store for data updates
 
-### Phase 2: Entity Management
-- [x] Define complete entity data model with TypeScript interfaces
-- [ ] Develop status visualization system with color coding
-- [ ] Create entity selection and detailed view components
-- [ ] Build filtering and grouping foundation
-- [ ] Implement trajectory visualization and path prediction
+- [ ] **Worker Thread Integration**
+  - [ ] Implement message passing between main and worker threads
+  - [ ] Create data processing functions in worker
+  - [ ] Set up basic spatial indexing
+  - [ ] Test with synthetic data
+
+### Phase 1: Proof-of-Concept
+- [ ] **Benchmark Implementation**
+  - [ ] Create test harness with configurable entity count (10-1000)
+  - [ ] Implement FPS counter and performance metrics
+  - [ ] Test with varied update frequencies
+  - [ ] Document performance boundaries
+
+- [ ] **Core Visualization Engine**
+  - [x] Implement custom BufferGeometryUtils for efficient geometry operations
+  - [x] Define entity data model with TypeScript interfaces
+  - [x] Implement Redux Toolkit store with optimized entity management
+  - [ ] Complete WebSocket integration for real-time updates
+  - [ ] Leverage Troika's optimization features
+
+- [ ] **Performance Optimization**
+  - [x] Begin worker thread implementation for data processing
+  - [ ] Implement object pooling for frequently created/destroyed objects
+  - [ ] Set up view frustum culling
+  - [ ] Create update prioritization based on distance and importance
+
+### Phase 2: Core Visualization System
+- [ ] **WebSocket Integration**
+  - [ ] Connect to WebSocket server
+  - [ ] Create message handlers for entity updates
+  - [ ] Implement batched update processing
+  - [ ] Add reconnection and error handling
+
+- [ ] **Entity Selection System**
+  - [ ] Implement raycasting for entity selection
+  - [ ] Create visual highlight effect for selected entities
+  - [ ] Build selection state management in Redux
+  - [ ] Add multi-select capability with modifier keys
+
+- [ ] **Status Visualization**
+  - [ ] Implement color coding based on entity status
+  - [ ] Add status indicators and icons
+  - [ ] Create transition animations for status changes
+  - [ ] Ensure visibility at varied distances
+
+- [ ] **Path and Trajectory Visualization**
+  - [ ] Implement line rendering for trajectories
+  - [ ] Add projected path visualization
+  - [ ] Create waypoint markers
+  - [ ] Optimize for large numbers of paths
+
+### Phase 3: User Interface Components
+- [ ] **Main UI Layout**
+  - [ ] Create responsive dashboard layout
+  - [ ] Implement resizable panels
+  - [ ] Add keyboard shortcuts for common actions
+  - [ ] Build status bar with connection metrics
+
+- [ ] **Entity List Panel**
+  - [ ] Create virtualized list for efficient rendering
+  - [ ] Implement sorting and basic filtering
+  - [ ] Add context menu for entity actions
+  - [ ] Synchronize selection state with 3D view
+
+- [ ] **Details Panel**
+  - [ ] Build entity details view with tabs
+  - [ ] Create property editors for entity control
+  - [ ] Implement live updates of entity properties
+  - [ ] Add history/timeline view of status changes
+
+- [ ] **Command Interface**
+  - [ ] Create command bar with action buttons
+  - [ ] Implement command history
+  - [ ] Add waypoint setting interface
+  - [ ] Build batch command system for multi-entity operations
 
 ## Backlog
 
-### Phase 3: Advanced Features
+### Advanced Features
 - [ ] Develop command and control interface with waypoint setting
 - [ ] Create alert and notification system
 - [ ] Implement geofencing and boundary visualization
 - [ ] Add terrain rendering with elevation data
 - [ ] Develop advanced filtering system with saved configurations
 
-### Phase 4: UI Components
-- [ ] Build main 3D visualization container with Troika
-- [ ] Create collapsible entity list panel
-- [ ] Design and implement details panel
-- [ ] Add status bar with connection metrics
-- [ ] Implement command bar with quick access tools
-- [ ] Create mini-map with viewport indicator
+### Performance Enhancements
+- [ ] Implement post-processing effects for visual clarity
+- [ ] Add shader-based highlighting for selected entities
+- [ ] Create custom shaders for special effects
+- [ ] Optimize for mobile/low-power devices
+- [ ] Implement progressive loading for large datasets
 
 ## Completed Tasks
 - [x] Initialize Next.js project
@@ -58,16 +123,17 @@
 - [x] Set up entity data model and state management
 - [x] Establish worker thread infrastructure
 - [x] Decide on Troika-based architecture for visualization
+- [x] Create detailed implementation plan
 
 ## Task Dependencies
-- Troika integration → Entity facade implementation → Entity visualization
-- Worker thread setup → Data processing optimization → Performance benchmarking
-- Data model definition → State management implementation → UI components
-- WebSocket implementation → Real-time data handling
+- Troika setup → Entity facade implementation → Performance benchmarking
+- Worker thread setup → Data processing optimization → Spatial indexing
+- WebSocket integration → Entity data flow → Visualization updates
+- UI layout → Entity list → Details panel → Command interface
 
 ## Task Priorities
-1. Set up Troika with Canvas3D and implement entity facade pattern
-2. Complete worker thread integration for data processing
-3. Create proof-of-concept with 100+ entities to validate Troika approach
-4. Implement WebSocket integration for real-time updates
-5. Develop entity interaction capabilities and UI components 
+1. Complete Troika proof-of-concept to validate performance
+2. Implement entity facade pattern with instancing
+3. Integrate worker threads for data processing
+4. Connect WebSocket for real-time updates
+5. Build UI components for entity interaction 

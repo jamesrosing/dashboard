@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node lib/three/patch-troika.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.7.0",
@@ -14,13 +15,15 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.503.0",
     "next": "15.3.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.2.0",
     "three": "^0.176.0",
+    "troika-2d": "^0.52.0",
     "troika-3d": "^0.52.4",
+    "troika-3d-text": "^0.52.4",
     "troika-three-utils": "^0.52.4"
   },
   "devDependencies": {
