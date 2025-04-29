@@ -2,7 +2,7 @@
 
 ## Current Project Focus
 
-We are implementing a high-performance 3D visualization system for a real-time dashboard that displays and manages various entity types (drones, vehicles, stationary objects) in a three-dimensional environment. The visualization system leverages Three.js for rendering and Troika for advanced 3D UI components.
+We are implementing a high-performance 3D visualization system for a real-time dashboard that displays and manages various entity types (drones, vehicles, stationary objects) in a three-dimensional environment. The visualization system now leverages Three.js for rendering with a focus on efficient instancing and performance optimization.
 
 ## Creative Phase Outcomes
 
@@ -46,212 +46,194 @@ Based on our Level 3 planning assessment, we are currently in Phase 1 of our imp
 
 ## Recent Work Context
 
-Recent work has focused on building the core visualization architecture using Troika-based components:
+The most recent work has focused on resolving compatibility and implementation issues:
 
-1. **Three.js Compatibility Issues**
-   - Fixed compatibility issues between Three.js and troika-3d libraries using webpack module aliasing
-   - Created a compatibility layer that adds missing constants (LinearEncoding, sRGBEncoding, NoToneMapping) needed by Troika
-   - Implemented BufferGeometryUtils for efficient geometry operations
+1. **Three.js Compatibility Resolution**
+   - Fixed TypeScript linting errors in visualization components
+   - Resolved missing Three.js constants required by Troika (3000, 3001, 0)
+   - Added compatibility layer via module-fix.ts to handle missing constants
+   - Fixed rotation handling for proper entity orientation
 
-2. **Troika Component Integration**
-   - Created type-safe wrappers for Troika components
-   - Developed base EntityFacade extending Troika's Object3DFacade
-   - Implemented DroneEntityFacade with drone-specific visualization features
-   - Set up Canvas3D component with basic Three.js scene
+2. **EntityWorld Implementation**
+   - Created a comprehensive EntityWorld component with scene setup
+   - Implemented efficient entity grouping by type
+   - Added performance monitoring with FPS tracking
+   - Created proper camera controls and lighting
 
-3. **Core System Architecture**
-   - Established type system for entity data model
-   - Set up Redux Toolkit for state management
-   - Created worker thread infrastructure for data processing
-   - Designed messaging system for cross-thread communication
+3. **Entity Rendering System**
+   - Implemented a component-based architecture with React Three Fiber
+   - Created type-specific renderers with appropriate geometries
+   - Added status visualization through color coding
+   - Implemented efficient instance rendering
+
+4. **Mock Data Generation**
+   - Created a comprehensive mock entity generator
+   - Added randomized entity properties for testing
+   - Implemented realistic initial distribution of entities
+   - Added simulated movement for testing dynamic updates
 
 ## Active Decisions
 
-1. **Performance Architecture**
-   - Using Troika's optimized scene graph management for entity representations
-   - Implementing worker threads to offload data processing from the render thread
-   - Planning to use instancing for rendering similar entities
-   - Designing an optimal update frequency system based on entity importance
+1. **Rendering Architecture**
+   - Using React Three Fiber for declarative scene management
+   - Implementing instanced rendering for efficient entity visualization
+   - Using component-based architecture for maintainable code
+   - Separating environment and entity rendering for better organization
 
 2. **Entity Visualization Strategy**
-   - Using stylized iconic representation for all entity types
-   - Implementing a status ring system with color coding and animations
-   - Creating a three-level LOD system based on camera distance
-   - Implementing entity instancing for similar entity types
+   - Using geometry-based visualization with type-specific models
+   - Implementing color-coding for entity status
+   - Creating efficient position and rotation updates
+   - Using Vector3 conversion for Three.js compatibility
 
-3. **Environment Design Strategy**
-   - Using a stylized topographic environment with low-poly terrain
-   - Implementing a three-point lighting system for optimal visualization
-   - Creating atmospheric effects for depth perception
-   - Using a technical color palette with neutral base and accent colors
+3. **State Management Approach**
+   - Using Redux Toolkit for centralized state management
+   - Implementing normalized entity store with byId and allIds
+   - Creating efficient selectors for entity access
+   - Adding optimized batch updates for performance
 
-4. **Thread Communication Pattern**
-   - Main thread handles rendering and UI updates
-   - Worker thread processes entity data, simulation, and spatial indexing
-   - Message passing with typed interfaces for thread communication
-   - Batch updates for efficient cross-thread communication
-
-5. **Library Integration Strategy**
-   - Using webpack module aliasing instead of direct patching for Three.js compatibility
-   - Clean approach that avoids modifying node_modules directly
-   - Maintains compatibility between latest Three.js versions and Troika
-   - Configuration-based solution that's maintainable and transparent
+4. **Performance Optimization Strategy**
+   - Using instanced rendering for similar entities
+   - Implementing custom BufferGeometryUtils for geometry operations
+   - Creating efficient update cycles with React hooks
+   - Measuring performance with FPS tracking
 
 ## Current Challenges
 
-1. **Performance Optimization**
-   - Need to ensure smooth rendering with 1000+ entities
-   - Working on efficient update batching and prioritization
-   - Implementing spatial indexing for entity location management
-   - Planning instancing and LOD systems for efficient rendering
+1. **TypeScript Integration**
+   - Ensuring proper typing for Three.js and React Three Fiber components
+   - Resolving compatibility issues between libraries
+   - Maintaining type safety in component props
+   - Fixing linting errors for cleaner code
 
-2. **Component Integration**
-   - Implementing the EntityWorld component based on design decisions
-   - Creating the stylized topographic environment
-   - Implementing entity facades using the stylized iconic representation
-   - Integrating LOD system with entity visualization
+2. **Performance with Large Entity Counts**
+   - Optimizing for 100+ entities without performance degradation
+   - Ensuring efficient updates for moving entities
+   - Minimizing unnecessary renders
+   - Improving memory usage for large entity sets
 
-3. **Real-time Data Flow**
-   - Designing efficient WebSocket integration for live data feeds
-   - Implementing update prioritization based on visibility and importance
-   - Creating optimized state management for entity updates
-   - Planning efficient binary message serialization
+3. **Real-time Data Integration**
+   - Designing efficient data flow for entity updates
+   - Implementing optimized state updates
+   - Ensuring UI responsiveness during frequent updates
+   - Creating proper WebSocket integration
 
-## Immediate Next Steps (Next 5 Days)
+## Immediate Next Steps
 
-1. Implement EntityWorld component based on creative phase decisions
-   - Create the stylized topographic environment
-   - Implement the three-point lighting system
-   - Set up atmospheric effects and grid system
-   - Add the dynamic particle system for depth cues
+1. **Enhance Entity Visualization**
+   - Improve entity-specific visualizations with more detailed models
+   - Add animation for entity movement and status changes
+   - Implement trajectory visualization
+   - Create better selection feedback
 
-2. Implement entity facades using stylized iconic representation
-   - Complete the DroneEntityFacade with animations and LOD
-   - Create the VehicleEntityFacade with appropriate visualization
-   - Implement the StationaryEntityFacade with appropriate design
-   - Integrate the status visualization system with entity facades
+2. **Add Filtering and Grouping**
+   - Implement entity filtering by type and status
+   - Create grouping capabilities for collective operations
+   - Add saved filter configurations
+   - Implement visual distinction for filtered entities
 
-3. Begin worker thread integration
-   - Design typed message interface for main/worker communication
-   - Implement initial spatial indexing system
-   - Create test harness for measuring thread communication performance
+3. **Enhance UI Components**
+   - Improve entity detail display with more information
+   - Add charts and graphs for entity metrics
+   - Create better status visualization
+   - Implement command input for entity control
 
-4. Prepare performance benchmarking infrastructure
-   - Set up synthetic data generation for testing
-   - Implement performance metrics collection
-   - Create visualization for performance monitoring
+4. **WebSocket Integration**
+   - Connect to WebSocket server for real-time updates
+   - Implement efficient message handling
+   - Create reconnection management
+   - Add status monitoring for connection
 
-## Current Technical Decisions
+## Current Technical Stack
 
-- **Troika-3D** for entity visualization and scene management
-- **Three.js** as the underlying 3D rendering engine
-- **Webpack Module Aliasing** for library compatibility
-- **Web Workers** for offloading data processing
-- **TypeScript** for strong typing and better development experience
-- **Redux Toolkit** for centralized state management
-- **Stylized Topographic Environment** for 3D scene visualization
-- **Stylized Iconic Representation** for entity visualization
+- **Framework**: Next.js 15.3 with React 19
+- **Rendering**: Three.js with React Three Fiber
+- **Components**: @react-three/drei for convenience utilities
+- **State Management**: Redux Toolkit with normalized stores
+- **Styling**: Tailwind CSS for responsive design
+- **Performance**: Instanced rendering, custom BufferGeometryUtils
 
-## Key Implementation Details
+## Implementation Details
 
-1. **EntityFacade Hierarchy**
+1. **Entity Rendering System**
    ```
-   Object3DFacade (Troika)
-     └── EntityFacade (Base)
-           ├── DroneEntityFacade
-           ├── VehicleEntityFacade (Planned)
-           └── StationaryEntityFacade (Planned)
-   ```
-
-2. **Thread Architecture**
-   ```
-   Main Thread                   Worker Thread
-   +-----------------+           +------------------+
-   | React UI        |           | Data Processing  |
-   | Three.js Render | <=======> | Spatial Indexing |
-   | Troika Scene    |           | Entity Simulation|
-   +-----------------+           +------------------+
-   ```
-
-3. **Update Cycle**
-   ```
-   Data Source -> Worker Thread -> Main Thread -> Visualization
-   ```
-
-4. **Three.js Compatibility Solution**
-   ```
-   +-----------------+      +-------------------+
-   | Application     |----->| three-compat.js   |
-   | imports 'three' |      | (adds constants)  |
-   +-----------------+      +-------------------+
-           |                         |
-           |      webpack alias      |
-           +-------------------------+
-                      |
-                      v
-   +--------------------------------------+
-   | Original Three.js with added         |
-   | constants for Troika compatibility   |
-   +--------------------------------------+
-   ```
-
-5. **Entity Visualization System**
-   ```
-   EntityBase
-     ├── Status Visualization
-     │     ├── Color-coded ring
-     │     ├── Pulse animations
-     │     └── Opacity variations
+   EntityWorld
+     ├── Environment
+     │     ├── Terrain/Ground
+     │     ├── Grid
+     │     ├── Axes
+     │     └── SkyBackground
      │
-     ├── Entity Type Representation
-     │     ├── Drone: Quadcopter with rotors
-     │     ├── Vehicle: Ground-based with direction
-     │     └── Stationary: Infrastructure design
-     │
-     ├── Level of Detail (LOD)
-     │     ├── High: Full model with animations
-     │     ├── Medium: Simplified geometry
-     │     └── Low: Basic shapes with color
-     │
-     └── Selection System
-           ├── Outline effect
-           ├── Animation
-           └── Information display
+     └── EntityRenderer (by type)
+           ├── DRONE instances
+           ├── VEHICLE instances
+           └── STATIONARY instances
    ```
 
-6. **Environment Design**
+2. **State Management**
    ```
-   Stylized Environment
-     ├── Terrain
-     │     ├── Low-poly topography
-     │     ├── Technical grid overlay
-     │     └── Level of detail system
-     │
-     ├── Lighting
-     │     ├── Key light (directional)
-     │     ├── Fill light (ambient)
-     │     └── Rim light (directional)
-     │
-     ├── Atmosphere
-     │     ├── Gradient skybox
-     │     ├── Distance fog
-     │     └── Particle system for depth
-     │
-     └── Visual Design
-           ├── Technical color palette
-           ├── Non-distracting base colors
-           └── Status colors reserved for entities
+   Store
+     └── Entities Slice
+           ├── byId: Record<id, Entity>
+           ├── allIds: string[]
+           ├── selectedIds: string[]
+           └── filteredIds: string[]
+   ```
+
+3. **UI Components**
+   ```
+   Dashboard
+     ├── Header (title, connection status, entity count, FPS)
+     ├── Main Content
+     │     ├── EntityList Panel
+     │     ├── EntityWorld (3D visualization)
+     │     └── EntityDetails Panel
+     └── Footer (StatusBar)
+   ```
+
+4. **Entity Data Model**
+   ```
+   Entity
+     ├── Basic Properties (id, type, position, rotation)
+     ├── Status Information (operational, standby, warning, etc.)
+     ├── Health Metrics (battery, temperature, etc.)
+     ├── Tasks (assigned operations)
+     └── Sensors (readings from various sensors)
    ```
 
 ## Implementation Progress
 
-- Core visualization components are partially implemented
-- Type system and state management are established
-- Three.js and Troika integration is working properly with webpack aliasing
-- Base entity facade pattern is implemented
-- Creative phases completed for 3D environment and entity visualization design
-- Implementation plan formalized with phased approach (Level 3 complexity)
-- Next focus is on implementing the environment and entity visualization systems based on creative phase decisions 
+We have successfully implemented several core components of the visualization system:
+
+1. **3D Entity Visualization**
+   - Created a working EntityWorld component with proper scene setup
+   - Implemented the EntityRenderer component using Three.js instanced rendering
+   - Established EntityInstance system for efficient entity rendering
+   - Implemented a performance monitoring system with FPS tracking
+
+2. **Environment Rendering**
+   - Implemented an Environment component with terrain, grid, and skybox
+   - Created efficient lighting setup with ambient, directional, and hemisphere lighting
+   - Added helper visualizations (grid, axes) for spatial reference
+   - Implemented a SkyBackground component for atmosphere
+
+3. **Data Model and State Management**
+   - Created a comprehensive entity data model with TypeScript interfaces
+   - Implemented Redux store with normalized entity state
+   - Added actions for entity management (add, update, remove, select)
+   - Created selectors for efficient entity access and filtering
+
+4. **UI Components**
+   - Implemented the Dashboard layout with responsive design
+   - Created the EntityList component for entity browsing and selection
+   - Implemented the EntityDetails component with comprehensive entity information
+   - Added StatusBar component for system metrics display
+
+5. **Performance Optimizations**
+   - Implemented custom BufferGeometryUtils for efficient geometry operations
+   - Created compatibility fixes for Three.js integration
+   - Used instanced rendering for similar entity types
+   - Established performance monitoring with FPS tracking
 
 ## Current Focus
 Our current focus is on implementing the high-performance visualization layer for the real-time multi-entity dashboard. This includes:
