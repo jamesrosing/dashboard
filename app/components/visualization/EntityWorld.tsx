@@ -1,9 +1,9 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stats, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppSelector } from '../../../lib/state/hooks';
-import { selectAllEntities } from '../../../lib/state/entitySlice';
+import { selectAllEntities, selectEntityById } from '../../../lib/state/entitySlice';
 import { Entity, EntityType } from '../../../lib/state/entityTypes';
 import { Environment } from './Environment';
 import { EntityRenderer } from './EntityRenderer';
@@ -14,12 +14,27 @@ interface EntityWorldProps {
 
 // Main EntityWorld container that sets up the Three.js canvas
 export const EntityWorld: React.FC<EntityWorldProps> = ({ onFpsChange }) => {
+  const [canvasInitialized, setCanvasInitialized] = useState(false);
+
+  // Only initialize canvas after component is mounted
+  useEffect(() => {
+    setCanvasInitialized(true);
+  }, []);
+
+  // If not initialized yet, return a placeholder
+  if (!canvasInitialized) {
+    return (
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black to-gray-900 flex items-center justify-center">
+        <div className="text-gray-400">Initializing 3D view...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-full bg-gradient-to-b from-gray-900 to-black">
+    <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black to-gray-900">
       <Canvas shadows gl={{ antialias: true }}>
-        <fog attach="fog" args={['#202030', 30, 100]} />
+        <fog attach="fog" args={['#050508', 100, 350]} />
         <EntityWorldScene onFpsChange={onFpsChange} />
-        <Stats className="stats" />
       </Canvas>
     </div>
   );
@@ -31,110 +46,103 @@ interface EntityWorldSceneProps {
 
 // Main scene component that manages the 3D environment
 const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
-  const entities = useAppSelector(selectAllEntities);
-  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
-  // Using 'any' type for OrbitControls ref due to the complex typing - eslint no-explicit-any is disabled in project config
+  // Use ANY to avoid the complex type issues with drei components
+  const cameraRef = useRef<any>(null);
   const controlsRef = useRef<any>(null);
-  const fpsCounterRef = useRef({ frames: 0, lastTime: performance.now() });
-
-  // Camera settings
-  const cameraSettings = useMemo(() => ({
-    position: [30, 30, 30] as [number, number, number],
-    fov: 60,
-    near: 0.1,
-    far: 1000,
-  }), []);
-
-  // Set up the scene when it mounts
-  useEffect(() => {
-    if (controlsRef.current) {
-      // Configure orbit controls
-      controlsRef.current.minDistance = 10;
-      controlsRef.current.maxDistance = 100;
-      controlsRef.current.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent going below ground
-      controlsRef.current.dampingFactor = 0.1;
-      controlsRef.current.enableDamping = true;
+  const framesRef = useRef<number[]>([]);
+  const lastFpsUpdateRef = useRef<number>(0);
+  
+  // Get entities using the selector instead of destructuring from state
+  const entities = useAppSelector(selectAllEntities);
+  const selectedEntityId = useAppSelector((state) => state.entities.selectedIds[0]);
+  
+  const groupedEntities = useMemo(() => {
+    const grouped = new Map<EntityType, Entity[]>();
+    if (entities) {
+      entities.forEach((entity) => {
+        const group = grouped.get(entity.type) || [];
+        group.push(entity);
+        grouped.set(entity.type, group);
+      });
     }
-  }, []);
-
-  // Create entity groups for efficient rendering
-  const entityGroups = useMemo(() => {
-    // Group entities by type for more efficient processing
-    const groups: Record<EntityType, Entity[]> = {
-      [EntityType.DRONE]: [],
-      [EntityType.VEHICLE]: [],
-      [EntityType.STATIONARY]: [],
-    };
-
-    entities.forEach(entity => {
-      if (entity.type in groups) {
-        groups[entity.type].push(entity);
-      }
-    });
-
-    return groups;
+    return grouped;
   }, [entities]);
-
-  // Track performance metrics
-  useFrame(() => {
-    // Calculate FPS
-    const counter = fpsCounterRef.current;
-    counter.frames++;
+  
+  // Calculate FPS
+  useFrame((_, delta) => {
+    // Update FPS counter
+    const now = Date.now();
+    framesRef.current.push(now);
     
-    const currentTime = performance.now();
-    if (currentTime - counter.lastTime >= 1000) {
-      // Calculate FPS and report it
-      const fps = Math.round((counter.frames * 1000) / (currentTime - counter.lastTime));
-      if (onFpsChange) {
-        onFpsChange(fps);
-      }
-      
-      // Reset counter
-      counter.frames = 0;
-      counter.lastTime = currentTime;
+    // Remove frames older than 1 second
+    while (framesRef.current.length > 0 && framesRef.current[0] < now - 1000) {
+      framesRef.current.shift();
+    }
+    
+    // Update FPS every 500ms to avoid too frequent updates
+    if (now - lastFpsUpdateRef.current > 500) {
+      lastFpsUpdateRef.current = now;
+      onFpsChange?.(framesRef.current.length);
     }
   });
 
+  // Position camera and set initial target
+  useEffect(() => {
+    if (cameraRef.current && controlsRef.current) {
+      // Set better camera position for a wider view
+      cameraRef.current.position.set(0, 60, 120);
+      cameraRef.current.updateProjectionMatrix();
+      
+      // Set controls target to center of the scene
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  }, []);
+
   return (
     <>
-      {/* Camera setup */}
-      <PerspectiveCamera
-        ref={cameraRef}
-        makeDefault
-        position={cameraSettings.position}
-        fov={cameraSettings.fov}
-        near={cameraSettings.near}
-        far={cameraSettings.far}
-      />
-      <OrbitControls ref={controlsRef} />
-
-      {/* Lighting system */}
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.6} />
       <directionalLight 
-        position={[10, 20, 15]} 
-        intensity={1.0} 
+        position={[50, 100, 50]} 
+        intensity={0.8} 
         castShadow 
         shadow-mapSize-width={2048} 
         shadow-mapSize-height={2048}
+        shadow-camera-far={500}
+        shadow-camera-left={-100}
+        shadow-camera-right={100}
+        shadow-camera-top={100}
+        shadow-camera-bottom={-100}
       />
-      <hemisphereLight args={['#ffffff', '#667799', 0.5]} />
-
-      {/* Environment (terrain, grid, etc.) */}
+      
+      <PerspectiveCamera 
+        ref={cameraRef}
+        makeDefault 
+        position={[0, 60, 120]} 
+        fov={45}
+        near={0.1}
+        far={1000}
+      />
+      
+      <OrbitControls 
+        ref={controlsRef}
+        enableDamping 
+        dampingFactor={0.1} 
+        rotateSpeed={0.5}
+        maxPolarAngle={Math.PI / 2 - 0.1}
+        minDistance={20}
+        maxDistance={300}
+      />
+      
       <Environment />
-
-      {/* Entity renderers by type */}
-      <EntityRenderer 
-        entities={entityGroups[EntityType.DRONE]} 
-        entityType={EntityType.DRONE} 
-      />
-      <EntityRenderer 
-        entities={entityGroups[EntityType.VEHICLE]} 
-        entityType={EntityType.VEHICLE} 
-      />
-      <EntityRenderer 
-        entities={entityGroups[EntityType.STATIONARY]} 
-        entityType={EntityType.STATIONARY} 
-      />
+      
+      {Array.from(groupedEntities.entries()).map(([type, typeEntities]) => (
+        <EntityRenderer 
+          key={type} 
+          entityType={type} 
+          entities={typeEntities} 
+        />
+      ))}
     </>
   );
 };

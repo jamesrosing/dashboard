@@ -22,9 +22,9 @@ export const Environment: React.FC = () => {
         position={[0, -0.1, 0]} 
         receiveShadow
       >
-        <planeGeometry args={[200, 200, 100, 100]} />
+        <planeGeometry args={[500, 500, 100, 100]} />
         <meshStandardMaterial 
-          color="#3f4550"
+          color="#151515"
           wireframe={false} 
           roughness={0.8}
           metalness={0.2}
@@ -33,12 +33,12 @@ export const Environment: React.FC = () => {
 
       {/* Grid for reference */}
       <gridHelper 
-        args={[200, 200, '#666666', '#444444']} 
+        args={[500, 500, '#444444', '#222222']} 
         position={[0, 0.01, 0]} 
       />
 
       {/* Axes helper for reference */}
-      <axesHelper args={[5]} position={[0, 0.01, 0]} />
+      <axesHelper args={[10]} position={[0, 0.01, 0]} />
 
       {/* Sky backdrop */}
       <SkyBackground />
@@ -50,9 +50,9 @@ export const Environment: React.FC = () => {
 const SkyBackground: React.FC = () => {
   return (
     <mesh position={[0, 0, 0]}>
-      <sphereGeometry args={[150, 32, 32]} />
+      <sphereGeometry args={[400, 32, 32]} />
       <meshBasicMaterial 
-        color={new THREE.Color('#101624')} 
+        color={new THREE.Color('#050508')} 
         side={THREE.BackSide} 
         fog={false}
       />

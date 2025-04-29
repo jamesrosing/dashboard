@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/lib/state/hooks';
-import { selectAllEntities, updateEntityPositions } from '@/lib/state/entitySlice';
+import { selectAllEntities, selectEntityById, updateEntityPositions } from '@/lib/state/entitySlice';
+import ClientOnly from './shared/ClientOnly';
+import SplitPane from './shared/layout/SplitPane';
+import Panel from './shared/layout/Panel';
+import EntityTree from './shared/layout/EntityTree';
 import EntityWorld from './visualization/EntityWorld';
-import EntityList from './shared/EntityList';
 import EntityDetails from './shared/EntityDetails';
 
 // Inline StatusBar component to fix import issues
@@ -46,8 +49,11 @@ export default function Dashboard() {
   const dispatch = useAppDispatch();
   const [fps, setFps] = useState(60);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+  const selectedEntity = useAppSelector(
+    state => selectedEntityId ? selectEntityById(state, selectedEntityId) : undefined
+  );
   
-  // Simulate entity movement
+  // Simulate entity movement (client-side only)
   useEffect(() => {
     const interval = setInterval(() => {
       const updates = entities.slice(0, 15).map(entity => {
@@ -68,10 +74,14 @@ export default function Dashboard() {
   }, [entities, dispatch]);
 
   return (
-    <div className="grid grid-rows-[60px_1fr_30px] h-screen w-screen bg-gray-900 text-white">
+    <div className="grid grid-rows-[60px_1fr_30px] h-screen w-screen bg-black text-white">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 border-b border-gray-800">
-        <h1 className="text-xl font-bold">Real-time Multi-Entity Dashboard</h1>
+      <header className="flex items-center justify-between px-6 border-b border-gray-800 relative">
+        <div className="flex items-center">
+          {/* Move indicator to inline with title instead of top-left corner */}
+          <div className="w-4 h-4 bg-emerald-500 mr-3 rounded"></div>
+          <h1 className="text-xl font-bold">Real-time Multi-Entity Dashboard</h1>
+        </div>
         <div className="flex items-center gap-4">
           <div className="px-3 py-1 rounded bg-green-600 text-sm">Connected</div>
           <div className="flex items-center gap-2">
@@ -82,35 +92,110 @@ export default function Dashboard() {
         </div>
       </header>
       
-      {/* Main content */}
-      <main className="flex flex-1 overflow-hidden">
-        {/* Left sidebar */}
-        <div className="w-64 border-r border-gray-800 p-4 flex flex-col">
-          <h2 className="text-lg font-semibold mb-4">Entities</h2>
-          <EntityList 
-            entities={entities}
-            selectedEntityId={selectedEntityId}
-            onSelectEntity={setSelectedEntityId}
-          />
-        </div>
-        
-        {/* 3D Visualization area */}
-        <div className="flex-1 relative">
-          <EntityWorld onFpsChange={setFps} />
-        </div>
-        
-        {/* Right sidebar */}
-        <div className="w-80 border-l border-gray-800 p-4 overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4">Details</h2>
-          {selectedEntityId ? (
-            <EntityDetails 
-              entityId={selectedEntityId} 
-              onClose={() => setSelectedEntityId(null)}
-            />
-          ) : (
-            <div className="text-sm text-gray-400">No entity selected</div>
-          )}
-        </div>
+      {/* Main content with split pane layout - adjust to fill more space */}
+      <main className="flex-1 overflow-hidden">
+        <SplitPane 
+          direction="horizontal" 
+          minSizes={[250, 400]}
+          defaultSizes={[20, 80]} 
+          id="dashboard-main-split"
+        >
+          {/* Left side: Entity management */}
+          <div className="flex flex-col h-full">
+            <Panel 
+              title="Entities" 
+              id="entity-tree-panel"
+              className="flex-grow"
+            >
+              <ClientOnly fallback={
+                <div className="p-4 text-sm text-gray-400">Loading entities...</div>
+              }>
+                <EntityTree
+                  selectedEntityId={selectedEntityId}
+                  onSelectEntity={setSelectedEntityId}
+                />
+              </ClientOnly>
+            </Panel>
+            
+            {/* Details panel adjacent to entity list */}
+            <Panel 
+              title="Entity Details" 
+              id="entity-details-panel"
+              defaultCollapsed={!selectedEntityId}
+            >
+              {selectedEntityId ? (
+                <EntityDetails 
+                  entityId={selectedEntityId} 
+                  onClose={() => setSelectedEntityId(null)}
+                />
+              ) : (
+                <div className="text-sm text-gray-400">No entity selected</div>
+              )}
+            </Panel>
+          </div>
+          
+          {/* Right side: Visualization - adjust the split for better space usage */}
+          <SplitPane
+            direction="vertical"
+            minSizes={[400, 100]}
+            defaultSizes={[95, 5]} 
+            id="visualization-split"
+          >
+            {/* 3D Visualization area with ClientOnly wrapper */}
+            <div className="flex-1 relative w-full h-full">
+              <ClientOnly fallback={
+                <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                  <div className="text-lg text-gray-400">Loading visualization...</div>
+                </div>
+              }>
+                <EntityWorld onFpsChange={setFps} />
+              </ClientOnly>
+            </div>
+            
+            {/* Bottom area for timeline/stats - slimmer design */}
+            <Panel title="Statistics" id="statistics-panel">
+              <div className="p-2">
+                <div className="flex justify-between items-center text-xs text-gray-300">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <span className="text-gray-500 mr-1">Entities:</span>
+                      {entities.length}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 mr-1">FPS:</span>
+                      {fps}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 mr-1">Update:</span>
+                      10Hz
+                    </div>
+                  </div>
+                  
+                  {selectedEntity && (
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <span className="text-gray-500 mr-1">Selected:</span>
+                        {selectedEntity.id.substring(0, 6)}
+                      </div>
+                      <div>
+                        <span className="text-gray-500 mr-1">Type:</span>
+                        {selectedEntity.type}
+                      </div>
+                      <div>
+                        <span className="text-gray-500 mr-1">Status:</span>
+                        {selectedEntity.status}
+                      </div>
+                      <div>
+                        <span className="text-gray-500 mr-1">Battery:</span>
+                        {selectedEntity.health.batteryLevel.toFixed(0)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Panel>
+          </SplitPane>
+        </SplitPane>
       </main>
       
       {/* Footer */}
