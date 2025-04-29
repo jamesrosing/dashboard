@@ -1,7 +1,7 @@
-import * as THREE from '@/lib/three/module-fix';
+import * as THREE from '../../../lib/three/three-compat';
 import { EntityFacade } from './EntityFacade';
-import { Entity, EntityType } from '@/lib/state/entityTypes';
-import { getDroneGeometry } from '@/lib/three/geometries';
+import { Entity, EntityType } from '../../../lib/state/entityTypes';
+import { getDroneGeometry } from '../../../lib/three/geometries';
 
 /**
  * Specialized facade for drone entity visualization

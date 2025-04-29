@@ -2,9 +2,9 @@ import React, { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stats, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
-import { useAppSelector } from '@/lib/state/hooks';
-import { selectAllEntities } from '@/lib/state/entitySlice';
-import { Entity, EntityType } from '@/lib/state/entityTypes';
+import { useAppSelector } from '../../../lib/state/hooks';
+import { selectAllEntities } from '../../../lib/state/entitySlice';
+import { Entity, EntityType } from '../../../lib/state/entityTypes';
 import { Environment } from './Environment';
 import { EntityRenderer } from './EntityRenderer';
 
@@ -63,7 +63,6 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
       [EntityType.DRONE]: [],
       [EntityType.VEHICLE]: [],
       [EntityType.STATIONARY]: [],
-      [EntityType.UNKNOWN]: [], // Include UNKNOWN type to handle any entities with undefined type
     };
 
     entities.forEach(entity => {

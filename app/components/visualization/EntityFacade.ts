@@ -1,8 +1,8 @@
 import { Object3DFacade } from './troika-imports';
-import * as THREE from '@/lib/three/module-fix';
-import { Entity, EntityType, Position, positionToVector3 } from '@/lib/state/entityTypes';
-import { getGeometryForEntityType } from '@/lib/three/geometries';
-import { getStatusColor } from '@/lib/state/entityTypes';
+import * as THREE from '../../../lib/three/three-compat';
+import { Entity, EntityType, Position, positionToVector3 } from '../../../lib/state/entityTypes';
+import { getGeometryForEntityType } from '../../../lib/three/geometries';
+import { getStatusColor } from '../../../lib/state/entityTypes';
 
 /**
  * Base EntityFacade for visualizing entities in the 3D scene

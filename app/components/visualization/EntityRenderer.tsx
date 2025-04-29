@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { Instance, Instances } from '@react-three/drei';
-import { Entity, EntityType } from '@/lib/state/entityTypes';
-import { getStatusColor } from '@/lib/state/entityTypes';
+import { Entity, EntityType, getStatusColor } from '../../../lib/state/entityTypes';
 
 interface EntityRendererProps {
   entities: Entity[];

@@ -15,8 +15,8 @@ const nextConfig: NextConfig = {
         config.resolve.alias = {};
       }
       
-      // Add alias for Three.js
-      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-compat.js');
+      // Add alias for Three.js - updated to use the .ts file
+      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-compat.ts');
     }
 
     return config;

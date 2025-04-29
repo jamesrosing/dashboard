@@ -4,6 +4,5 @@
  * Exports all utilities from the utils directory for easy importing
  */
 
-// These modules need to be created before they can be imported
-// export * from './three-compat';
-// export * from './troika-compat-patch';
+// Export compatibility patches for Three.js and Troika
+export * from './troika-compat-patch';

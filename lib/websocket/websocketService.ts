@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { Entity } from '../state/entityTypes';
 import { store } from '../state/store';
-import { updateEntities, upsertEntity, removeEntity } from '../state/entitySlice';
+import { addEntity, updateEntity, removeEntity, updateEntityPositions } from '../state/entitySlice';
 
 /**
  * WebSocket service for real-time entity data
@@ -121,11 +121,22 @@ class WebSocketService {
     });
 
     this.socket.on('entityUpdate', (data: Entity) => {
-      store.dispatch(upsertEntity(data));
+      if (data.id in store.getState().entities.byId) {
+        store.dispatch(updateEntity(data));
+      } else {
+        store.dispatch(addEntity(data));
+      }
     });
 
     this.socket.on('entitiesUpdate', (data: Entity[]) => {
-      store.dispatch(updateEntities(data));
+      // Add new entities or update existing ones
+      data.forEach(entity => {
+        if (entity.id in store.getState().entities.byId) {
+          store.dispatch(updateEntity(entity));
+        } else {
+          store.dispatch(addEntity(entity));
+        }
+      });
     });
 
     this.socket.on('entityRemove', (entityId: string) => {

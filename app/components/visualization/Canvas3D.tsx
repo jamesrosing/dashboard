@@ -2,16 +2,15 @@
 
 // Reference the type declaration file for troika-3d
 /// <reference path="./troika.d.ts" />
-
 import React, { useRef, useEffect, useState } from 'react';
-import * as THREE from '@/lib/three/module-fix';
+import * as THREE from 'three';
 // Import from our type-safe wrapper
 import { Canvas3D as TroikaCanvas3D, TroikaObject3DFacade } from './troika-imports';
-// Fix import for OrbitControls
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// Import OrbitControls from drei instead of directly from three
+import { OrbitControls } from '@react-three/drei';
 // Use our typed hooks
-import { useAppSelector } from '@/lib/state/hooks';
-import { selectFilteredEntities } from '@/lib/state/entitySlice';
+import { useAppSelector } from '../../../lib/state/hooks';
+import { selectFilteredEntities } from '../../../lib/state/entitySlice';
 
 interface Canvas3DProps {
   width?: number | string;
@@ -26,7 +25,7 @@ interface Canvas3DProps {
 export function Canvas3D({ width = '100%', height = '100%', className = '' }: Canvas3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<any>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const controlsRef = useRef<any>(null);
   const [initialized, setInitialized] = useState(false);
   
   // Get entities from Redux store 
@@ -62,7 +61,7 @@ export function Canvas3D({ width = '100%', height = '100%', className = '' }: Ca
     containerRef.current.appendChild(renderer.domElement);
 
     // Setup orbit controls
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new (OrbitControls as any)(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
@@ -80,7 +79,7 @@ export function Canvas3D({ width = '100%', height = '100%', className = '' }: Ca
     scene.add(axesHelper);
 
     // Create Troika Canvas3D
-    const canvas3d = new TroikaCanvas3D(containerRef.current);
+    const canvas3d = new (TroikaCanvas3D as any)(containerRef.current);
     canvas3d.scene = scene;
     canvas3d.camera = camera;
     canvas3d.renderer = renderer;
