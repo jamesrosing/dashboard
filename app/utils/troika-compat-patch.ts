@@ -4,9 +4,11 @@
  * This file provides a compatibility layer to work with troika-3d and related libraries
  * that rely on older Three.js constants that have been removed in newer versions.
  */
-
 import * as THREE from 'three';
-import { LinearEncoding, sRGBEncoding, NoToneMapping } from './three-compat';
+// Define constants that were removed from newer Three.js versions
+const LinearEncoding = 3000;
+const sRGBEncoding = 3001;
+const NoToneMapping = 0;
 
 // Patch THREE global object with missing constants if they don't exist
 if (typeof (THREE as any).LinearEncoding === 'undefined') {

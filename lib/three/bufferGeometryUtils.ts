@@ -1,178 +1,247 @@
-import * as THREE from '@/lib/three/module-fix';
+import * as THREE from 'three';
+
+// Define a type for the possible TypedArray constructors
+type TypedArrayConstructor = 
+  | Int8ArrayConstructor 
+  | Uint8ArrayConstructor 
+  | Uint8ClampedArrayConstructor
+  | Int16ArrayConstructor
+  | Uint16ArrayConstructor
+  | Int32ArrayConstructor
+  | Uint32ArrayConstructor
+  | Float32ArrayConstructor
+  | Float64ArrayConstructor;
 
 /**
- * Custom implementation of BufferGeometryUtils for this project
+ * Custom implementation of BufferGeometryUtils for the dashboard project
+ * Provides utilities for working with Three.js BufferGeometry objects
  */
 export class BufferGeometryUtils {
   /**
-   * Merges multiple BufferGeometry instances into one
+   * Merges multiple THREE.BufferGeometry instances into one
+   * @param geometries - Array of buffer geometries to merge
+   * @param useGroups - Whether to create groups in the merged geometry
+   * @returns Merged buffer geometry, or null if the input is invalid
    */
   static mergeBufferGeometries(
-    geometries: THREE.BufferGeometry[],
-    useGroups = false
-  ): THREE.BufferGeometry {
-    if (geometries.length < 1) {
-      throw new Error('BufferGeometryUtils: No geometries provided for merge');
+    geometries: THREE.BufferGeometry[], 
+    useGroups: boolean = true
+  ): THREE.BufferGeometry | null {
+    // Input validation
+    if (!geometries || geometries.length < 1) {
+      return null;
     }
 
     if (geometries.length === 1) {
       return geometries[0].clone();
     }
 
-    let isIndexed = geometries[0].index !== null;
-    const attributesUsed = new Set(Object.keys(geometries[0].attributes));
-    const morphAttributesUsed = new Set(Object.keys(geometries[0].morphAttributes));
-    const attributes: Record<string, THREE.BufferAttribute[]> = {};
-    const morphAttributes: Record<string, THREE.BufferAttribute[][]> = {};
-    const morphTargetsRelative = geometries[0].morphTargetsRelative;
-    const mergedGeometry = new THREE.BufferGeometry();
-    let offset = 0;
+    let isIndexed = true;
 
-    // Ensure all geometries match in their attributes and index state
+    // Check if all geometries are indexed consistently
     for (let i = 0; i < geometries.length; i++) {
-      const geometry = geometries[i];
-      const geometryAttributes = geometry.attributes;
-
-      // Validate index state consistency
-      if (isIndexed !== (geometry.index !== null)) {
-        console.error('BufferGeometryUtils: Inconsistent use of indices across geometries');
-        return new THREE.BufferGeometry();
-      }
-
-      // Validate attribute consistency
-      for (const name in geometryAttributes) {
-        if (!attributesUsed.has(name)) {
-          console.error(`BufferGeometryUtils: Attribute '${name}' not present in all geometries`);
-          return new THREE.BufferGeometry();
-        }
-      }
-
-      // Validate that all required attributes are present
-      for (const name of attributesUsed) {
-        if (!(name in geometryAttributes)) {
-          console.error(`BufferGeometryUtils: Attribute '${name}' missing from geometry ${i}`);
-          return new THREE.BufferGeometry();
-        }
-      }
-
-      // Setup attributes array if it doesn't exist yet
-      for (const name of attributesUsed) {
-        if (!attributes[name]) {
-          attributes[name] = [];
-        }
-        
-        // We only support non-interleaved attributes for merging
-        const attr = geometryAttributes[name as keyof typeof geometryAttributes];
-        if (attr instanceof THREE.InterleavedBufferAttribute) {
-          console.error('BufferGeometryUtils: InterleavedBufferAttribute not supported for merging');
-          return new THREE.BufferGeometry();
-        }
-        attributes[name].push(attr as THREE.BufferAttribute);
-      }
-
-      // Handle morph attributes
-      if (morphTargetsRelative !== geometry.morphTargetsRelative) {
-        console.error('BufferGeometryUtils: Inconsistent morphTargetsRelative values');
-        return new THREE.BufferGeometry();
-      }
-
-      for (const name in geometry.morphAttributes) {
-        if (!morphAttributesUsed.has(name)) {
-          console.error(`BufferGeometryUtils: Morph attribute '${name}' not present in all geometries`);
-          return new THREE.BufferGeometry();
-        }
-      }
-
-      for (const name of morphAttributesUsed) {
-        if (!morphAttributes[name]) {
-          morphAttributes[name] = [];
-        }
-        
-        const morphAttr = geometry.morphAttributes[name as keyof typeof geometry.morphAttributes] || [];
-        // Ensure morphAttributes are convertible to BufferAttribute[]
-        const bufferMorphAttrs: THREE.BufferAttribute[] = [];
-        
-        for (let j = 0; j < morphAttr.length; j++) {
-          const attr = morphAttr[j];
-          if (attr instanceof THREE.InterleavedBufferAttribute) {
-            console.error('BufferGeometryUtils: InterleavedBufferAttribute not supported for morphAttributes');
-            return new THREE.BufferGeometry();
-          }
-          bufferMorphAttrs.push(attr as THREE.BufferAttribute);
-        }
-        
-        morphAttributes[name].push(bufferMorphAttrs);
-      }
-
-      // Track offset for groups
-      if (useGroups) {
-        let count: number;
-        if (isIndexed) {
-          count = geometry.index!.count;
-        } else if (geometry.attributes.position) {
-          count = geometry.attributes.position.count;
-        } else {
-          console.error('BufferGeometryUtils: No position attribute found');
-          return new THREE.BufferGeometry();
-        }
-
-        mergedGeometry.addGroup(offset, count, i);
-        offset += count;
+      if (!geometries[i].index) {
+        isIndexed = false;
+        break;
       }
     }
 
-    // Merge attributes
-    for (const name in attributes) {
-      const mergedAttribute = this.mergeBufferAttributes(attributes[name]);
-      if (!mergedAttribute) {
-        console.error(`BufferGeometryUtils: Could not merge attribute '${name}'`);
-        return new THREE.BufferGeometry();
+    // Verify attribute consistency when needed
+    const geometriesCount = geometries.length;
+    const firstGeometry = geometries[0];
+    const attributesUsed = new Set(Object.keys(firstGeometry.attributes));
+    
+    for (let i = 1; i < geometriesCount; i++) {
+      const geometry = geometries[i];
+      const geometryAttributes = Object.keys(geometry.attributes);
+      
+      // Check matching attributes
+      for (const name of attributesUsed) {
+        if (!geometryAttributes.includes(name)) {
+          console.error(`Unable to merge: geometry at index ${i} does not have attribute '${name}'`);
+          return null;
+        }
+        
+        const attr1 = firstGeometry.attributes[name];
+        const attr2 = geometry.attributes[name];
+        
+        if (attr1.itemSize !== attr2.itemSize) {
+          console.error(`Unable to merge: attribute '${name}' has different itemSize`);
+          return null;
+        }
       }
+    }
+
+    // Count vertices and indices
+    let vertexCount = 0;
+    let indexCount = 0;
+    
+    for (let i = 0; i < geometriesCount; i++) {
+      const geometry = geometries[i];
+      vertexCount += geometry.attributes.position.count;
+      
+      if (isIndexed) {
+        indexCount += geometry.index!.count;
+      }
+    }
+
+    // Create merged geometry
+    const mergedGeometry = new THREE.BufferGeometry();
+    
+    // Process attributes
+    for (const name of attributesUsed) {
+      const attribute = firstGeometry.attributes[name];
+      const itemSize = attribute.itemSize;
+      const mergedAttribute = new THREE.BufferAttribute(
+        new Float32Array(vertexCount * itemSize), 
+        itemSize
+      );
+      
+      let offset = 0;
+      
+      for (let i = 0; i < geometriesCount; i++) {
+        const geometry = geometries[i];
+        const geometryAttribute = geometry.attributes[name];
+        const attributeArray = geometryAttribute.array;
+        
+        for (let j = 0; j < attributeArray.length; j++) {
+          mergedAttribute.array[offset + j] = attributeArray[j];
+        }
+        
+        offset += attributeArray.length;
+      }
+      
       mergedGeometry.setAttribute(name, mergedAttribute);
     }
 
-    // Merge morph attributes
-    for (const name in morphAttributes) {
-      const numMorphTargets = morphAttributes[name][0].length;
-      const mergedMorphAttribute: THREE.BufferAttribute[] = [];
-
-      for (let i = 0; i < numMorphTargets; i++) {
-        const morphAttributesToMerge: THREE.BufferAttribute[] = [];
-        for (let j = 0; j < morphAttributes[name].length; j++) {
-          morphAttributesToMerge.push(morphAttributes[name][j][i]);
+    // Process indices
+    if (isIndexed) {
+      const indexType = vertexCount > 65535 
+        ? Uint32Array 
+        : Uint16Array;
+      
+      const mergedIndices = new indexType(indexCount);
+      let indexOffset = 0;
+      let vertexOffset = 0;
+      
+      for (let i = 0; i < geometriesCount; i++) {
+        const geometry = geometries[i];
+        const index = geometry.index!.array;
+        const vertexCount = geometry.attributes.position.count;
+        
+        for (let j = 0; j < index.length; j++) {
+          mergedIndices[indexOffset + j] = index[j] + vertexOffset;
         }
         
-        const mergedMorphAttributeForTarget = this.mergeBufferAttributes(morphAttributesToMerge);
-        if (!mergedMorphAttributeForTarget) {
-          console.error(`BufferGeometryUtils: Could not merge morph attribute '${name}'`);
-          return new THREE.BufferGeometry();
-        }
-        mergedMorphAttribute.push(mergedMorphAttributeForTarget);
+        indexOffset += index.length;
+        vertexOffset += vertexCount;
       }
-
-      mergedGeometry.morphAttributes[name as keyof typeof mergedGeometry.morphAttributes] = mergedMorphAttribute;
+      
+      mergedGeometry.setIndex(new THREE.BufferAttribute(mergedIndices, 1));
     }
 
-    // Merge indices
-    if (isIndexed) {
+    // Process groups if needed
+    if (useGroups) {
+      let offset = 0;
       let indexOffset = 0;
-      const mergedIndex: number[] = [];
-
-      for (let i = 0; i < geometries.length; i++) {
-        const index = geometries[i].index!;
-        for (let j = 0; j < index.count; j++) {
-          mergedIndex.push(index.getX(j) + indexOffset);
+      
+      for (let i = 0; i < geometriesCount; i++) {
+        const geometry = geometries[i];
+        
+        if (geometry.groups && geometry.groups.length > 0) {
+          // Copy groups from the original geometry
+          for (let j = 0; j < geometry.groups.length; j++) {
+            const group = geometry.groups[j];
+            mergedGeometry.addGroup(
+              group.start + indexOffset,
+              group.count,
+              group.materialIndex
+            );
+          }
+        } else if (isIndexed) {
+          // Create a new group for the geometry
+          mergedGeometry.addGroup(
+            indexOffset,
+            geometry.index!.count,
+            i
+          );
+        } else {
+          // Create a new group for the geometry based on vertex count
+          mergedGeometry.addGroup(
+            offset,
+            geometry.attributes.position.count,
+            i
+          );
         }
-        indexOffset += geometries[i].attributes.position.count;
+        
+        if (isIndexed) {
+          indexOffset += geometry.index!.count;
+        }
+        
+        offset += geometry.attributes.position.count;
       }
+    }
 
-      mergedGeometry.setIndex(mergedIndex);
+    // Process morph attributes
+    if (firstGeometry.morphAttributes) {
+      const morphKeys = Object.keys(firstGeometry.morphAttributes);
+      
+      if (morphKeys.length > 0) {
+        const morphTargets: Record<string, THREE.BufferAttribute> = {};
+        
+        for (let i = 0; i < morphKeys.length; i++) {
+          const morphKey = morphKeys[i];
+          const morphAttributeArrays: THREE.BufferAttribute[][] = [];
+          let morphAttributeCount = 0;
+          
+          // Count morphs to create arrays of the right size
+          for (let j = 0; j < geometriesCount; j++) {
+            const geometry = geometries[j];
+            
+            if (geometry.morphAttributes && morphKey in geometry.morphAttributes) {
+              const morphAttrs = geometry.morphAttributes[morphKey as keyof typeof geometry.morphAttributes];
+              if (morphAttrs) {
+                morphAttributeCount += morphAttrs.length;
+                morphAttributeArrays.push(morphAttrs as THREE.BufferAttribute[]);
+              }
+            }
+          }
+          
+          // Don't process if no morph attributes for this key
+          if (morphAttributeCount === 0) continue;
+          
+          // Create the morph buffer attribute
+          const morphItemSize = morphAttributeArrays[0][0].itemSize;
+          const morphAttrLength = morphAttributeArrays[0][0].count * morphItemSize;
+          
+          const morphArray = new Float32Array(morphAttrLength);
+          const morphBufferAttribute = new THREE.BufferAttribute(morphArray, morphItemSize);
+          
+          // Fill the morph attribute
+          for (let j = 0; j < morphAttrLength; j++) {
+            let value = 0;
+            for (let k = 0; k < morphAttributeArrays.length; k++) {
+              if (morphAttributeArrays[k][0]) {
+                value += morphAttributeArrays[k][0].array[j];
+              }
+            }
+            morphArray[j] = value;
+          }
+          
+          morphTargets[morphKey] = morphBufferAttribute;
+        }
+        
+        // Assign the morph attributes to the merged geometry
+        for (const key in morphTargets) {
+          mergedGeometry.morphAttributes[key as keyof typeof mergedGeometry.morphAttributes] = [morphTargets[key]];
+        }
+      }
     }
 
     // Update bounding information
     mergedGeometry.computeBoundingSphere();
     mergedGeometry.computeBoundingBox();
-
+    
     return mergedGeometry;
   }
 
@@ -184,16 +253,15 @@ export class BufferGeometryUtils {
   ): THREE.BufferAttribute | null {
     if (attributes.length === 0) return null;
 
-    let TypedArray: Float32ArrayConstructor | Uint16ArrayConstructor | Uint32ArrayConstructor;
-    let itemSize: number;
-    let normalized: boolean;
+    // Keep as let since it's assigned later
+    let TypedArray: TypedArrayConstructor;
+    const itemSize: number = attributes[0].itemSize;
+    const normalized: boolean = attributes[0].normalized;
     let arrayLength = 0;
 
     // Determine array type and dimensions from first attribute
     const firstAttribute = attributes[0];
-    TypedArray = firstAttribute.array.constructor as any;
-    itemSize = firstAttribute.itemSize;
-    normalized = firstAttribute.normalized;
+    TypedArray = firstAttribute.array.constructor as TypedArrayConstructor;
 
     // Calculate total array length
     for (let i = 0; i < attributes.length; i++) {

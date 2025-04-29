@@ -1,4 +1,4 @@
-import * as THREE from '@/lib/three/module-fix';
+import * as THREE from 'three';
 import { EntityType } from '../state/entityTypes';
 import { BufferGeometryUtils } from './bufferGeometryUtils';
 

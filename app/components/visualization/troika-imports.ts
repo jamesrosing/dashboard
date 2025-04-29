@@ -4,9 +4,8 @@
  * This module provides typed exports for troika-3d modules to avoid TypeScript errors.
  * Import from this file instead of importing directly from troika-3d packages.
  */
-
 // Import THREE for type definitions
-import * as THREE from '@/lib/three/module-fix';
+import * as THREE from 'three';
 
 // Import actual troika modules with type any to suppress TS errors
 // @ts-ignore

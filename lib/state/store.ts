@@ -226,6 +226,7 @@ export const store = configureStore({
     ui: uiReducer,
     connection: connectionReducer
   },
+  devTools: process.env.NODE_ENV !== 'production',
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

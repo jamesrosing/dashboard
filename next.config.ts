@@ -1,25 +1,22 @@
 import type { NextConfig } from "next";
 import path from 'path';
-import fs from 'fs';
-
-// Run the patch script for troika modules
-require('./lib/three/patch-troika');
 
 const nextConfig: NextConfig = {
   /* config options here */
   webpack: (config, { isServer }) => {
-    // Add a plugin to make THREE available globally
+    // Handle Three.js compatibility with Troika
     if (!isServer) {
-      const webpack = require('webpack');
-      if (!config.plugins) {
-        config.plugins = [];
+      // Add resolve alias for 'three'
+      if (!config.resolve) {
+        config.resolve = {};
       }
       
-      config.plugins.push(
-        new webpack.ProvidePlugin({
-          THREE: 'three'
-        })
-      );
+      if (!config.resolve.alias) {
+        config.resolve.alias = {};
+      }
+      
+      // Add alias for Three.js
+      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-compat.js');
     }
 
     return config;

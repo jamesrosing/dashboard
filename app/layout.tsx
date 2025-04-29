@@ -1,4 +1,3 @@
-import '@/app/utils/three-patch-global';
 import './globals.css';
 
 export default function RootLayout({

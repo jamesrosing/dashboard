@@ -6,10 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "node lib/three/patch-troika.js"
+    "lint": "next lint"
   },
   "dependencies": {
+    "@react-three/drei": "^10.0.7",
     "@reduxjs/toolkit": "^2.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
