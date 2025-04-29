@@ -83,23 +83,29 @@
 ## Technical Constraints
 
 ### Performance Requirements
-- 60+ FPS with 100+ entities in view
-- Support for 10+ updates per second per entity
-- Total system capable of handling 1000+ updates per second
-- UI remains responsive (< 50ms) during peak load
-- Memory usage increases linearly with entity count
+- Must maintain 60fps minimum for up to 100 entities
+- UI must remain responsive during high-frequency updates
+- Visualization must render smoothly on mid-range hardware
+- Memory usage must remain reasonable for long sessions
 
 ### Browser Requirements
+- Primary support: Chrome, Edge, Firefox (latest 2 versions)
+- Secondary support: Safari (latest version)
 - WebGL 2.0 support required
-- Modern browsers with ES2020+ support
-- Hardware acceleration recommended
-- Minimum of 4GB RAM, 2GHz dual-core processor
+- No IE11 support required
 
 ### Network Requirements
-- Stable WebSocket connection
-- Bandwidth for frequent small updates
-- Low-latency connection preferred
-- Graceful degradation during connection issues
+- Minimum 1Mbps connection for real-time updates
+- Must handle intermittent connectivity gracefully
+- Reconnection strategy required for connection drops
+- Latency display for connection quality awareness
+
+### Compatibility Issues
+- Three.js version 0.176.0 has breaking changes from earlier versions
+- Some dependencies like Troika require older Three.js constants that were removed
+- Need compatibility patches for constants like LinearEncoding (3000), sRGBEncoding (3001)
+- Potential hydration issues due to Next.js SSR with client-only Three.js components
+- Several compatibility patch files have been removed and consolidated into a single approach
 
 ## Development Setup
 

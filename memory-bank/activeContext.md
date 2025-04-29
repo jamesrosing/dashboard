@@ -118,6 +118,13 @@ The most recent work has focused on resolving compatibility and implementation i
    - Ensuring UI responsiveness during frequent updates
    - Creating proper WebSocket integration
 
+4. **Hydration Issues**
+   - Redux store initialization creating server/client rendering mismatches
+   - Client-side Three.js components causing hydration warnings
+   - WebSocket service attempting to connect during client-side rendering
+   - Mock entities loading conditionally based on environment
+   - Time-based animations and simulations causing initial render differences
+
 ## Immediate Next Steps
 
 1. **Enhance Entity Visualization**
@@ -143,6 +150,13 @@ The most recent work has focused on resolving compatibility and implementation i
    - Implement efficient message handling
    - Create reconnection management
    - Add status monitoring for connection
+
+5. **Resolve Hydration Issues**
+   - Implement proper SSR guards for client-only components
+   - Create a ClientOnly wrapper component for Three.js elements
+   - Defer WebSocket connections until after hydration
+   - Ensure consistent initial state between server and client
+   - Move simulated entity movement to client-side effect hooks
 
 ## Current Technical Stack
 

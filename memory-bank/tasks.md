@@ -66,6 +66,15 @@ We have successfully implemented the core visualization components of the real-t
 - 🔷 Enhance visual design for better user experience
 - 🔷 Add performance metrics visualization
 
+### Hydration & Compatibility Issues (High Priority)
+- 🔷 Implement ClientOnly wrapper component for Three.js elements
+- 🔷 Add proper SSR guards to components using browser-only features
+- 🔷 Defer WebSocket connections until after hydration
+- 🔷 Ensure consistent initial state between server and client rendering
+- 🔷 Update documentation on compatibility patch approach
+- 🔷 Consolidate compatibility fixes into a single managed module
+- 🔷 Add proper error handling for Three.js initialization
+
 ## Next Tasks (Upcoming)
 
 ### WebSocket Integration Preparation
@@ -105,6 +114,14 @@ We have successfully implemented the core visualization components of the real-t
   - Designing efficient message protocol with minimal payload
   - Implementing update batching and prioritization
   - Creating optimized state update patterns
+
+### Next.js Server/Client Hydration
+- **Challenge**: Preventing hydration mismatches with client-only Three.js components
+- **Mitigation**:
+  - Creating a ClientOnly wrapper component to defer client-side rendering
+  - Adding proper useEffect guards for initialization code
+  - Ensuring deterministic initial state for server and client
+  - Implementing dynamic imports for Three.js components
 
 ## Dependencies and Blockers
 
