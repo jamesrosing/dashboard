@@ -4,6 +4,14 @@
 
 We are implementing a high-performance 3D visualization system for a real-time dashboard that displays and manages various entity types (drones, vehicles, stationary objects) in a three-dimensional environment. The visualization system now leverages Three.js for rendering with a focus on efficient instancing and performance optimization.
 
+Current focus areas include:
+
+1. **Enhanced UI Layout Architecture**: Implementing a Split-Pane Layout with Resizable Containers to provide a more flexible and powerful dashboard experience while maintaining a predictable structure.
+
+2. **Hydration Issue Resolution**: Creating a ClientOnly wrapper component and ensuring consistent state between server and client rendering to address Next.js hydration issues with Three.js components.
+
+3. **Advanced Entity Organization**: Developing a nested entity tree view organized by entity type with enhanced filtering capabilities and status visualization.
+
 ## Creative Phase Outcomes
 
 We've completed two key creative phases that have defined our implementation approach:
@@ -98,6 +106,20 @@ The most recent work has focused on resolving compatibility and implementation i
    - Creating efficient update cycles with React hooks
    - Measuring performance with FPS tracking
 
+5. **UI Layout Architecture**
+   - Implementing Split-Pane Layout with Resizable Containers
+   - Making entity details panel directly adjacent to the entities panel
+   - Supporting collapsible/expandable panels with minimized states
+   - Creating a nested entity tree view organized by type
+   - Adding panel state persistence in localStorage
+
+6. **Hydration Strategy**
+   - Creating a ClientOnly wrapper component for Three.js elements
+   - Implementing consistent state initialization between server and client
+   - Deferring dynamic content loading until after hydration
+   - Using deterministic initial state generators
+   - Applying useEffect for client-only state modifications
+
 ## Current Challenges
 
 1. **TypeScript Integration**
@@ -157,6 +179,14 @@ The most recent work has focused on resolving compatibility and implementation i
    - Defer WebSocket connections until after hydration
    - Ensure consistent initial state between server and client
    - Move simulated entity movement to client-side effect hooks
+
+6. **Implement Enhanced UI Layout**
+   - Create ClientOnly wrapper component
+   - Implement Split-Pane container system
+   - Develop resizable and collapsible panels
+   - Create nested entity tree view by type
+   - Add panel state persistence
+   - Ensure consistent state between server and client
 
 ## Current Technical Stack
 

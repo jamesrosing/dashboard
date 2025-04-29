@@ -35,6 +35,13 @@ We have successfully completed the core visualization components and established
 - Fixed rotation handling for proper entity orientation
 - Identified Next.js hydration issues with Three.js components
 
+### UI Enhancement Decisions
+- Completed creative phase for UI layout architecture
+- Selected Split-Pane Layout with Resizable Containers approach
+- Designed ClientOnly wrapper component for hydration issues
+- Created implementation plan for enhanced entity organization
+- Developed approach for panel state persistence
+
 ### File Consolidation
 - Removed redundant compatibility files including:
   - app/utils/three-compat.ts
@@ -107,9 +114,11 @@ The UI components are implemented with a responsive design:
 The next development phase will focus on:
 
 1. Resolve hydration issues with Next.js and Three.js
-2. Enhance entity visualization with more detailed models
-3. Implement trajectory visualization
-4. Prepare for WebSocket integration
-5. Create ClientOnly wrapper component for Three.js elements
+2. Implement ClientOnly wrapper component
+3. Create Split-Pane Layout system with resizable containers
+4. Develop nested entity tree view organized by type
+5. Implement collapsible/expandable panels with state persistence
+6. Enhance entity visualization with more detailed models
+7. Prepare for WebSocket integration
 
 All components are implemented and working with the current visualization system. The next phase will focus on enhancing the visualization, preparing for real-time data integration, and implementing advanced management features. 
