@@ -37,9 +37,11 @@ const StatusBar = () => {
       <div className="text-sm">
         Latency: {latency.toFixed(1)}ms
       </div>
-      <div className="text-sm">
-        Time: {new Date().toLocaleTimeString()}
-      </div>
+      <ClientOnly>
+        <div className="text-sm">
+          Time: {new Date().toLocaleTimeString()}
+        </div>
+      </ClientOnly>
     </div>
   );
 };
@@ -83,7 +85,7 @@ export default function Dashboard() {
           <h1 className="text-xl font-bold">Real-time Multi-Entity Dashboard</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="px-3 py-1 rounded bg-green-600 text-sm">Connected</div>
+          <div className="px-3 py-1 rounded text-sm text-green-500 border border-green-600">Connected</div>
           <div className="flex items-center gap-2">
             <span className="text-sm">Entities: {entities.length}</span>
             <span className="text-sm">|</span>

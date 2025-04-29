@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ClientOnly from './ClientOnly';
 
 export default function StatusBar() {
   const [latency, setLatency] = useState<number>(0);
@@ -28,9 +29,11 @@ export default function StatusBar() {
       <div className="text-sm">
         Latency: {latency.toFixed(1)}ms
       </div>
-      <div className="text-sm">
-        Time: {new Date().toLocaleTimeString()}
-      </div>
+      <ClientOnly>
+        <div className="text-sm">
+          Time: {new Date().toLocaleTimeString()}
+        </div>
+      </ClientOnly>
     </div>
   );
 } 

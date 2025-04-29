@@ -24,6 +24,7 @@
     "troika-2d": "^0.52.0",
     "troika-3d": "^0.52.4",
     "troika-3d-text": "^0.52.4",
+    "troika-three-text": "^0.52.4",
     "troika-three-utils": "^0.52.4"
   },
   "devDependencies": {

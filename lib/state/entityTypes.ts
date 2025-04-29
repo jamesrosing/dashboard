@@ -125,15 +125,15 @@ export function vector3ToPosition(vector: THREE.Vector3): Position {
 export function getStatusColor(status: EntityStatus): string {
   switch (status) {
     case EntityStatus.OPERATIONAL:
-      return '#4caf50'; // Green
+      return '#00ff00'; // Brighter Green
     case EntityStatus.STANDBY:
-      return '#2196f3'; // Blue
+      return '#00b7ff'; // Brighter Blue
     case EntityStatus.WARNING:
-      return '#ff9800'; // Amber
+      return '#ffbf00'; // Brighter Amber
     case EntityStatus.CRITICAL:
-      return '#f44336'; // Red
+      return '#ff2222'; // Brighter Red
     case EntityStatus.OFFLINE:
-      return '#9e9e9e'; // Gray
+      return '#cccccc'; // Lighter Gray
     default:
       return '#ffffff'; // White
   }

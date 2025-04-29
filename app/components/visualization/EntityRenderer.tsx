@@ -34,8 +34,10 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
       limit={1000} // Maximum number of instances
       geometry={geometry}
       material={new THREE.MeshStandardMaterial({
-        roughness: 0.5,
-        metalness: 0.8,
+        roughness: 0.3,
+        metalness: 0.9,
+        emissive: new THREE.Color(0x222222),
+        emissiveIntensity: 0.2,
       })}
     >
       {entities.map((entity) => (

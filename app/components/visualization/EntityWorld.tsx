@@ -101,10 +101,10 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
 
   return (
     <>
-      <ambientLight intensity={0.6} />
+      <ambientLight intensity={0.8} />
       <directionalLight 
         position={[50, 100, 50]} 
-        intensity={0.8} 
+        intensity={0.9}
         castShadow 
         shadow-mapSize-width={2048} 
         shadow-mapSize-height={2048}
@@ -113,6 +113,17 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
         shadow-camera-right={100}
         shadow-camera-top={100}
         shadow-camera-bottom={-100}
+      />
+      
+      <directionalLight 
+        position={[-50, 80, -50]} 
+        intensity={0.5} 
+        castShadow={false}
+      />
+      
+      <hemisphereLight 
+        args={[0x3366ff, 0x224422, 0.5]} 
+        position={[0, 100, 0]} 
       />
       
       <PerspectiveCamera 
