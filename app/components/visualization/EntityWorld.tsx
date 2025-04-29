@@ -7,7 +7,7 @@ import { selectAllEntities, selectTrajectoryEnabled, selectTrajectorySettings } 
 import { Entity, EntityType } from '../../../lib/state/entityTypes';
 import { Environment } from './Environment';
 import { EntityRenderer } from './EntityRenderer';
-import TrajectoryRenderer from './TrajectoryRenderer';
+import EntityTrajectories from './EntityTrajectory';
 
 interface EntityWorldProps {
   onFpsChange?: (fps: number) => void;
@@ -167,27 +167,35 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
       
       <Environment />
       
-      {/* Render entity trajectories if enabled */}
-      {trajectoryEnabled && (
-        <TrajectoryRenderer
-          entities={entities}
-          selectedEntityId={selectedEntityId}
-          showAllTrajectories={showAllTrajectories}
-          pastTrailLength={trajectorySettings.maxPastPositions}
-          projectedTrailLength={trajectorySettings.maxProjectedPositions}
-          pastTrailOpacity={0.7}
-          projectedTrailOpacity={0.4}
-        />
-      )}
-      
-      {/* Render entity instances */}
+      {/* Render entities grouped by type */}
       {Array.from(groupedEntities.entries()).map(([type, typeEntities]) => (
         <EntityRenderer 
-          key={type} 
+          key={`renderer-${type}`} 
           entityType={type} 
           entities={typeEntities} 
         />
       ))}
+      
+      {/* Render entity trajectories if enabled */}
+      {trajectoryEnabled && (
+        <>
+          {Array.from(groupedEntities.entries()).map(([type, entities]) => (
+            <EntityTrajectories 
+              key={`trajectory-${type}`}
+              entities={entities}
+              settings={{
+                historyLength: trajectorySettings.maxPastPositions,
+                pastColor: "#4caf50", // Green for past
+                futureColor: "#2196f3", // Blue for future
+                opacity: 0.7,
+                width: 0.1,
+                showFuture: true
+              }}
+              selectedEntityId={selectedEntityId}
+            />
+          ))}
+        </>
+      )}
       
       {/* Trajectory controls helper */}
       <group position={[0, 0.1, 0]}>
