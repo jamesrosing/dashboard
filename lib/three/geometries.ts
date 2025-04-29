@@ -65,7 +65,7 @@ export function getDroneGeometry(detailLevel: 'high' | 'medium' | 'low' = 'mediu
         body, arm1, arm2, arm3, arm4, prop1, prop2, prop3, prop4
       ]);
       
-      geometry = droneGeometry;
+      geometry = droneGeometry || new THREE.BoxGeometry(2, 0.4, 2);
       break;
       
     case 'medium':
@@ -80,7 +80,7 @@ export function getDroneGeometry(detailLevel: 'high' | 'medium' | 'low' = 'mediu
         armGeo.clone().rotateY(Math.PI / 2)
       ]);
       
-      geometry = mediumDrone;
+      geometry = mediumDrone || new THREE.BoxGeometry(2, 0.4, 2);
       break;
       
     case 'low':
@@ -134,7 +134,7 @@ export function getVehicleGeometry(detailLevel: 'high' | 'medium' | 'low' = 'med
         body, cabin, wheel1, wheel2, wheel3, wheel4
       ]);
       
-      geometry = vehicleGeometry;
+      geometry = vehicleGeometry || new THREE.BoxGeometry(4, 1.5, 2).translate(0, 0.75, 0);
       break;
       
     case 'medium':
@@ -150,7 +150,7 @@ export function getVehicleGeometry(detailLevel: 'high' | 'medium' | 'low' = 'med
         bodyGeo, cabinGeo
       ]);
       
-      geometry = mediumVehicle;
+      geometry = mediumVehicle || new THREE.BoxGeometry(4, 1.5, 2).translate(0, 0.75, 0);
       break;
       
     case 'low':
@@ -195,7 +195,7 @@ export function getStationaryGeometry(detailLevel: 'high' | 'medium' | 'low' = '
         base, tower, antenna
       ]);
       
-      geometry = stationaryGeometry;
+      geometry = stationaryGeometry || new THREE.CylinderGeometry(1, 1, 3, 8).translate(0, 1.5, 0);
       break;
       
     case 'medium':
@@ -211,7 +211,7 @@ export function getStationaryGeometry(detailLevel: 'high' | 'medium' | 'low' = '
         baseGeo, towerGeo
       ]);
       
-      geometry = mediumStationary;
+      geometry = mediumStationary || new THREE.CylinderGeometry(1, 1, 3, 8).translate(0, 1.5, 0);
       break;
       
     case 'low':

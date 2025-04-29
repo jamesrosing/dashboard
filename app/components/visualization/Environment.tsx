@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { useTexture } from '@react-three/drei';
 
 // Environment component that renders terrain, grid, and skybox
 export const Environment: React.FC = () => {

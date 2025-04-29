@@ -1,6 +1,6 @@
-import * as THREE from '../../../lib/three/three-compat';
+import * as THREE from 'three';
 import { EntityFacade } from './EntityFacade';
-import { Entity, EntityType } from '../../../lib/state/entityTypes';
+import { EntityType } from '../../../lib/state/entityTypes';
 import { getDroneGeometry } from '../../../lib/three/geometries';
 
 /**
@@ -14,7 +14,7 @@ export class DroneEntityFacade extends EntityFacade {
   private propellerSpeed = 0.2;
   private animating = false;
   
-  constructor(parent: any) {
+  constructor(parent: EntityFacade) {
     super(parent);
     this.entityType = EntityType.DRONE;
     

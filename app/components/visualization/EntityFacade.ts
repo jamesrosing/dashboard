@@ -1,5 +1,5 @@
 import { Object3DFacade } from './troika-imports';
-import * as THREE from '../../../lib/three/three-compat';
+import * as THREE from 'three';
 import { Entity, EntityType, Position, positionToVector3 } from '../../../lib/state/entityTypes';
 import { getGeometryForEntityType } from '../../../lib/three/geometries';
 import { getStatusColor } from '../../../lib/state/entityTypes';
@@ -22,7 +22,7 @@ export class EntityFacade extends Object3DFacade {
   protected _prevPosition: Position | null = null;
   protected _prevStatus: string | null = null;
   
-  constructor(parent: any) {
+  constructor(parent: Object3DFacade) {
     super(parent);
     
     // Create default material

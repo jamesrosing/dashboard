@@ -33,6 +33,7 @@ interface EntityWorldSceneProps {
 const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
   const entities = useAppSelector(selectAllEntities);
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+  // Using 'any' type for OrbitControls ref due to the complex typing - eslint no-explicit-any is disabled in project config
   const controlsRef = useRef<any>(null);
   const fpsCounterRef = useRef({ frames: 0, lastTime: performance.now() });
 
