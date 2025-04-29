@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Entity, EntityType, EntityStatus } from './entityTypes';
+import { Entity, EntityType, EntityStatus, Position } from './entityTypes';
 import mockEntities from './mockEntities';
 import { RootState } from './store';
 
@@ -12,6 +12,9 @@ interface EntityState {
   selectedIds: string[];
   filteredIds: string[];
   lastUpdate: number;
+  trajectoryEnabled: boolean;
+  maxPastPositions: number;
+  maxProjectedPositions: number;
 }
 
 /**
@@ -22,7 +25,10 @@ const initialState: EntityState = {
   allIds: [],
   selectedIds: [],
   filteredIds: [],
-  lastUpdate: Date.now()
+  lastUpdate: Date.now(),
+  trajectoryEnabled: true,
+  maxPastPositions: 20,
+  maxProjectedPositions: 10
 };
 
 // Initialize with mock entities in development
@@ -36,7 +42,10 @@ const preloadedState: EntityState = {
   allIds: Object.keys(preloadedEntities),
   selectedIds: [],
   filteredIds: [],
-  lastUpdate: Date.now()
+  lastUpdate: Date.now(),
+  trajectoryEnabled: true,
+  maxPastPositions: 20,
+  maxProjectedPositions: 10
 };
 
 /**
@@ -109,14 +118,109 @@ export const entitySlice = createSlice({
     updateEntityPositions: (state, action: PayloadAction<Array<{ id: string, position: Entity['position'] }>>) => {
       action.payload.forEach(update => {
         if (state.byId[update.id]) {
-          state.byId[update.id].position = update.position;
-          state.byId[update.id].lastUpdated = Date.now();
+          const entity = state.byId[update.id];
+          
+          // Record current position in trajectory if enabled
+          if (state.trajectoryEnabled) {
+            // Only add to trajectory for moving entities
+            if (entity.type !== EntityType.STATIONARY) {
+              // Add current position to past positions array
+              entity.trajectory.pastPositions.unshift({...entity.position});
+              
+              // Limit past positions array size
+              if (entity.trajectory.pastPositions.length > state.maxPastPositions) {
+                entity.trajectory.pastPositions = entity.trajectory.pastPositions.slice(0, state.maxPastPositions);
+              }
+              
+              // Generate simple projected path based on velocity
+              if (entity.velocity) {
+                entity.trajectory.projectedPath = calculateProjectedPath(
+                  update.position, 
+                  entity.velocity, 
+                  state.maxProjectedPositions
+                );
+              }
+            }
+          }
+          
+          // Update entity position
+          entity.position = update.position;
+          entity.lastUpdated = Date.now();
         }
       });
       state.lastUpdate = Date.now();
+    },
+    setTrajectoryEnabled: (state, action: PayloadAction<boolean>) => {
+      state.trajectoryEnabled = action.payload;
+      
+      // Clear trajectories if disabled
+      if (!action.payload) {
+        Object.values(state.byId).forEach(entity => {
+          entity.trajectory.pastPositions = [];
+          entity.trajectory.projectedPath = [];
+        });
+      }
+    },
+    setMaxPastPositions: (state, action: PayloadAction<number>) => {
+      state.maxPastPositions = action.payload;
+      
+      // Trim existing trajectories if needed
+      Object.values(state.byId).forEach(entity => {
+        if (entity.trajectory.pastPositions.length > action.payload) {
+          entity.trajectory.pastPositions = entity.trajectory.pastPositions.slice(0, action.payload);
+        }
+      });
+    },
+    setMaxProjectedPositions: (state, action: PayloadAction<number>) => {
+      state.maxProjectedPositions = action.payload;
+      
+      // Update projected paths to match new limit
+      Object.values(state.byId).forEach(entity => {
+        if (entity.trajectory.projectedPath.length > 0 && entity.velocity) {
+          entity.trajectory.projectedPath = calculateProjectedPath(
+            entity.position,
+            entity.velocity,
+            action.payload
+          );
+        }
+      });
+    },
+    clearTrajectories: (state) => {
+      Object.values(state.byId).forEach(entity => {
+        entity.trajectory.pastPositions = [];
+        entity.trajectory.projectedPath = [];
+      });
     }
   },
 });
+
+// Helper function to calculate projected path based on current position and velocity
+function calculateProjectedPath(
+  position: Position, 
+  velocity: Position, 
+  steps: number
+): Position[] {
+  const path: Position[] = [];
+  
+  let currentX = position.x;
+  let currentY = position.y;
+  let currentZ = position.z;
+  
+  for (let i = 1; i <= steps; i++) {
+    // Simple linear projection with slight randomness for natural appearance
+    currentX += velocity.x + (Math.random() - 0.5) * 0.1;
+    currentY += velocity.y + (Math.random() - 0.5) * 0.1;
+    currentZ += velocity.z + (Math.random() - 0.5) * 0.1;
+    
+    path.push({
+      x: currentX,
+      y: currentY,
+      z: currentZ
+    });
+  }
+  
+  return path;
+}
 
 // Actions
 export const {
@@ -128,7 +232,11 @@ export const {
   clearSelection,
   filterEntities,
   clearFilters,
-  updateEntityPositions
+  updateEntityPositions,
+  setTrajectoryEnabled,
+  setMaxPastPositions,
+  setMaxProjectedPositions,
+  clearTrajectories
 } = entitySlice.actions;
 
 // Selectors
@@ -148,5 +256,11 @@ export const selectEntitiesByStatus = (state: RootState, status: EntityStatus): 
   state.entities.allIds
     .map(id => state.entities.byId[id])
     .filter(entity => entity.status === status);
+export const selectTrajectoryEnabled = (state: RootState): boolean => state.entities.trajectoryEnabled;
+export const selectTrajectorySettings = (state: RootState) => ({
+  enabled: state.entities.trajectoryEnabled,
+  maxPastPositions: state.entities.maxPastPositions,
+  maxProjectedPositions: state.entities.maxProjectedPositions
+});
 
 export default entitySlice.reducer; 

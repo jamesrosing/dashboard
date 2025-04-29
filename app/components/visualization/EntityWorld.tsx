@@ -1,12 +1,13 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppSelector } from '../../../lib/state/hooks';
-import { selectAllEntities, selectEntityById } from '../../../lib/state/entitySlice';
+import { selectAllEntities, selectTrajectoryEnabled, selectTrajectorySettings } from '../../../lib/state/entitySlice';
 import { Entity, EntityType } from '../../../lib/state/entityTypes';
 import { Environment } from './Environment';
 import { EntityRenderer } from './EntityRenderer';
+import TrajectoryRenderer from './TrajectoryRenderer';
 
 interface EntityWorldProps {
   onFpsChange?: (fps: number) => void;
@@ -55,6 +56,25 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
   // Get entities using the selector instead of destructuring from state
   const entities = useAppSelector(selectAllEntities);
   const selectedEntityId = useAppSelector((state) => state.entities.selectedIds[0]);
+  const trajectoryEnabled = useAppSelector(selectTrajectoryEnabled);
+  const trajectorySettings = useAppSelector(selectTrajectorySettings);
+
+  // Show trajectories for selected entity only or all entities based on settings
+  const [showAllTrajectories, setShowAllTrajectories] = useState(false);
+
+  // Toggle all trajectories with 'T' key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 't' || e.key === 'T') {
+        setShowAllTrajectories(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   
   const groupedEntities = useMemo(() => {
     const grouped = new Map<EntityType, Entity[]>();
@@ -147,6 +167,20 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
       
       <Environment />
       
+      {/* Render entity trajectories if enabled */}
+      {trajectoryEnabled && (
+        <TrajectoryRenderer
+          entities={entities}
+          selectedEntityId={selectedEntityId}
+          showAllTrajectories={showAllTrajectories}
+          pastTrailLength={trajectorySettings.maxPastPositions}
+          projectedTrailLength={trajectorySettings.maxProjectedPositions}
+          pastTrailOpacity={0.7}
+          projectedTrailOpacity={0.4}
+        />
+      )}
+      
+      {/* Render entity instances */}
       {Array.from(groupedEntities.entries()).map(([type, typeEntities]) => (
         <EntityRenderer 
           key={type} 
@@ -154,6 +188,23 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
           entities={typeEntities} 
         />
       ))}
+      
+      {/* Trajectory controls helper */}
+      <group position={[0, 0.1, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[80, 0, 80]} receiveShadow>
+          <planeGeometry args={[30, 10]} />
+          <meshStandardMaterial color="#222222" opacity={0.7} transparent />
+        </mesh>
+        <Text 
+          position={[80, 1, 80]}
+          fontSize={1.5}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {`Press 'T' to ${showAllTrajectories ? 'hide' : 'show'} all trajectories`}
+        </Text>
+      </group>
     </>
   );
 };

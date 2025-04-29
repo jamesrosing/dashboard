@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/lib/state/hooks';
-import { selectAllEntities, selectEntityById, updateEntityPositions } from '@/lib/state/entitySlice';
+import { 
+  selectAllEntities, 
+  selectEntityById, 
+  updateEntityPositions,
+  selectTrajectoryEnabled,
+  setTrajectoryEnabled,
+  clearTrajectories
+} from '@/lib/state/entitySlice';
 import ClientOnly from './shared/ClientOnly';
 import SplitPane from './shared/layout/SplitPane';
 import Panel from './shared/layout/Panel';
@@ -194,6 +201,11 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
+
+                {/* Trajectory controls */}
+                <ClientOnly>
+                  <TrajectoryControls />
+                </ClientOnly>
               </div>
             </Panel>
           </SplitPane>
@@ -207,4 +219,41 @@ export default function Dashboard() {
       </footer>
     </div>
   );
-} 
+}
+
+// TrajectoryControls component to manage trajectory visualization
+const TrajectoryControls: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const trajectoryEnabled = useAppSelector(selectTrajectoryEnabled);
+  
+  return (
+    <div className="flex items-center mt-3 justify-between border-t border-gray-800 pt-2">
+      <div className="text-xs text-gray-400">Trajectory Visualization</div>
+      <div className="flex items-center gap-2">
+        <button
+          className={`px-2 py-1 text-xs rounded ${
+            trajectoryEnabled 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-700 text-gray-300'
+          }`}
+          onClick={() => dispatch(setTrajectoryEnabled(!trajectoryEnabled))}
+        >
+          {trajectoryEnabled ? 'Enabled' : 'Disabled'}
+        </button>
+        
+        <button
+          className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600"
+          onClick={() => dispatch(clearTrajectories())}
+          disabled={!trajectoryEnabled}
+          title={!trajectoryEnabled ? 'Enable trajectories first' : 'Clear all trajectory data'}
+        >
+          Clear Paths
+        </button>
+
+        <div className="text-xs text-gray-400 ml-2">
+          Press <span className="px-1 bg-gray-700 rounded">T</span> to toggle all paths
+        </div>
+      </div>
+    </div>
+  );
+}; 
