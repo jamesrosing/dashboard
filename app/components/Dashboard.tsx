@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '@/lib/state/hooks';
 import { 
   selectAllEntities, 
   selectEntityById, 
-  updateEntityPositions,
+  updateEntityPosition,
   selectTrajectoryEnabled,
   setTrajectoryEnabled,
   clearTrajectories
@@ -65,18 +65,17 @@ export default function Dashboard() {
   // Simulate entity movement (client-side only)
   useEffect(() => {
     const interval = setInterval(() => {
-      const updates = entities.slice(0, 15).map(entity => {
-        return {
+      // Update each entity one by one
+      entities.slice(0, 15).forEach(entity => {
+        dispatch(updateEntityPosition({
           id: entity.id,
           position: {
             x: entity.position.x + (Math.random() - 0.5) * 0.5,
             y: entity.position.y + (Math.random() - 0.5) * 0.2,
             z: entity.position.z + (Math.random() - 0.5) * 0.5,
           }
-        };
+        }));
       });
-      
-      dispatch(updateEntityPositions(updates));
     }, 100);
     
     return () => clearInterval(interval);

@@ -1,7 +1,10 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createSelector, PayloadAction } from '@reduxjs/toolkit';
 import { Entity, EntityType, EntityStatus, Position } from './entityTypes';
 import mockEntities from './mockEntities';
 import { RootState } from './store';
+
+// Add safe browser detection
+const isBrowser = typeof window !== 'undefined';
 
 /**
  * Entity state interface
@@ -15,6 +18,10 @@ interface EntityState {
   trajectoryEnabled: boolean;
   maxPastPositions: number;
   maxProjectedPositions: number;
+  trajectorySettings: {
+    maxPastPositions: number;
+    showSelectedOnly: boolean;
+  };
 }
 
 /**
@@ -27,8 +34,12 @@ const initialState: EntityState = {
   filteredIds: [],
   lastUpdate: Date.now(),
   trajectoryEnabled: true,
-  maxPastPositions: 50,
-  maxProjectedPositions: 20
+  maxPastPositions: 20,
+  maxProjectedPositions: 20,
+  trajectorySettings: {
+    maxPastPositions: 20,
+    showSelectedOnly: false
+  }
 };
 
 // Initialize with mock entities in development
@@ -45,7 +56,11 @@ const preloadedState: EntityState = {
   lastUpdate: Date.now(),
   trajectoryEnabled: true,
   maxPastPositions: 20,
-  maxProjectedPositions: 10
+  maxProjectedPositions: 10,
+  trajectorySettings: {
+    maxPastPositions: 20,
+    showSelectedOnly: false
+  }
 };
 
 /**
@@ -57,22 +72,81 @@ export const entitySlice = createSlice({
   reducers: {
     addEntity: (state, action: PayloadAction<Entity>) => {
       const entity = action.payload;
+      
+      // Initialize trajectory data if not present
+      if (!entity.pastPositions) {
+        entity.pastPositions = [];
+      }
+      
+      if (!entity.futurePositions) {
+        entity.futurePositions = [];
+      }
+      
       state.byId[entity.id] = entity;
       if (!state.allIds.includes(entity.id)) {
         state.allIds.push(entity.id);
       }
       state.lastUpdate = Date.now();
     },
-    updateEntity: (state, action: PayloadAction<Partial<Entity> & { id: string }>) => {
-      const update = action.payload;
-      if (state.byId[update.id]) {
-        state.byId[update.id] = {
-          ...state.byId[update.id],
-          ...update,
-          lastUpdated: Date.now()
-        };
+    updateEntity: (state, action: PayloadAction<{id: string, changes: Partial<Entity>}>) => {
+      const { id, changes } = action.payload;
+      if (state.byId[id]) {
+        state.byId[id] = { ...state.byId[id], ...changes };
         state.lastUpdate = Date.now();
       }
+    },
+    updateEntityPosition: (state, action: PayloadAction<{id: string, position: Position}>) => {
+      const { id, position } = action.payload;
+      const entity = state.byId[id];
+      
+      if (entity) {
+        // Skip during SSR
+        if (!isBrowser) {
+          entity.position = position;
+          return;
+        }
+        
+        // Add current position to past positions before updating
+        if (!entity.pastPositions) {
+          entity.pastPositions = [];
+        }
+        
+        if (entity.position) {
+          entity.pastPositions.push({ ...entity.position });
+        }
+        
+        // Limit the number of past positions
+        const maxPositions = state.trajectorySettings.maxPastPositions;
+        if (entity.pastPositions.length > maxPositions) {
+          entity.pastPositions = entity.pastPositions.slice(-maxPositions);
+        }
+        
+        // Update current position
+        entity.position = position;
+        
+        // Calculate future positions based on current velocity if available
+        if (entity.velocity) {
+          if (!entity.futurePositions) {
+            entity.futurePositions = [];
+          }
+          
+          // Clear previous future positions
+          entity.futurePositions = [];
+          
+          // Simple linear projection for 5 steps ahead
+          const { x, y, z } = entity.position;
+          const velocity = entity.velocity;
+          
+          for (let i = 1; i <= 5; i++) {
+            entity.futurePositions.push({
+              x: x + velocity.x * i,
+              y: y + velocity.y * i,
+              z: z + velocity.z * i
+            });
+          }
+        }
+      }
+      state.lastUpdate = Date.now();
     },
     removeEntity: (state, action: PayloadAction<string>) => {
       const id = action.payload;
@@ -84,8 +158,8 @@ export const entitySlice = createSlice({
     },
     selectEntity: (state, action: PayloadAction<string>) => {
       const id = action.payload;
-      if (!state.selectedIds.includes(id)) {
-        state.selectedIds.push(id);
+      if (!state.selectedIds.includes(id) && state.allIds.includes(id)) {
+        state.selectedIds = [id]; // Single selection for now
       }
     },
     deselectEntity: (state, action: PayloadAction<string>) => {
@@ -115,40 +189,11 @@ export const entitySlice = createSlice({
     clearFilters: (state) => {
       state.filteredIds = [];
     },
-    updateEntityPositions: (state, action: PayloadAction<Array<{ id: string, position: Entity['position'] }>>) => {
-      action.payload.forEach(update => {
-        if (state.byId[update.id]) {
-          const entity = state.byId[update.id];
-          
-          // Record current position in trajectory if enabled
-          if (state.trajectoryEnabled) {
-            // Only add to trajectory for moving entities
-            if (entity.type !== EntityType.STATIONARY) {
-              // Add current position to past positions array
-              entity.trajectory.pastPositions.unshift({...entity.position});
-              
-              // Limit past positions array size
-              if (entity.trajectory.pastPositions.length > state.maxPastPositions) {
-                entity.trajectory.pastPositions = entity.trajectory.pastPositions.slice(0, state.maxPastPositions);
-              }
-              
-              // Generate simple projected path based on velocity
-              if (entity.velocity) {
-                entity.trajectory.projectedPath = calculateProjectedPath(
-                  update.position, 
-                  entity.velocity, 
-                  state.maxProjectedPositions
-                );
-              }
-            }
-          }
-          
-          // Update entity position
-          entity.position = update.position;
-          entity.lastUpdated = Date.now();
-        }
-      });
-      state.lastUpdate = Date.now();
+    setFilteredEntities: (state, action: PayloadAction<string[]>) => {
+      state.filteredIds = action.payload;
+    },
+    clearFilteredEntities: (state) => {
+      state.filteredIds = [];
     },
     setTrajectoryEnabled: (state, action: PayloadAction<boolean>) => {
       state.trajectoryEnabled = action.payload;
@@ -156,8 +201,8 @@ export const entitySlice = createSlice({
       // Clear trajectories if disabled
       if (!action.payload) {
         Object.values(state.byId).forEach(entity => {
-          entity.trajectory.pastPositions = [];
-          entity.trajectory.projectedPath = [];
+          entity.pastPositions = [];
+          entity.futurePositions = [];
         });
       }
     },
@@ -166,8 +211,8 @@ export const entitySlice = createSlice({
       
       // Trim existing trajectories if needed
       Object.values(state.byId).forEach(entity => {
-        if (entity.trajectory.pastPositions.length > action.payload) {
-          entity.trajectory.pastPositions = entity.trajectory.pastPositions.slice(0, action.payload);
+        if (entity.pastPositions && entity.pastPositions.length > action.payload) {
+          entity.pastPositions = entity.pastPositions.slice(0, action.payload);
         }
       });
     },
@@ -176,8 +221,8 @@ export const entitySlice = createSlice({
       
       // Update projected paths to match new limit
       Object.values(state.byId).forEach(entity => {
-        if (entity.trajectory.projectedPath.length > 0 && entity.velocity) {
-          entity.trajectory.projectedPath = calculateProjectedPath(
+        if (entity.futurePositions && entity.futurePositions.length > 0 && entity.velocity) {
+          entity.futurePositions = calculateProjectedPath(
             entity.position,
             entity.velocity,
             action.payload
@@ -187,9 +232,15 @@ export const entitySlice = createSlice({
     },
     clearTrajectories: (state) => {
       Object.values(state.byId).forEach(entity => {
-        entity.trajectory.pastPositions = [];
-        entity.trajectory.projectedPath = [];
+        entity.pastPositions = [];
+        entity.futurePositions = [];
       });
+    },
+    updateTrajectorySettings: (state, action: PayloadAction<Partial<EntityState['trajectorySettings']>>) => {
+      state.trajectorySettings = {
+        ...state.trajectorySettings,
+        ...action.payload
+      };
     }
   },
 });
@@ -200,6 +251,11 @@ function calculateProjectedPath(
   velocity: Position, 
   steps: number
 ): Position[] {
+  // Validate inputs
+  if (!position || !velocity) {
+    return [];
+  }
+  
   const path: Position[] = [];
   
   let currentX = position.x;
@@ -226,41 +282,62 @@ function calculateProjectedPath(
 export const {
   addEntity,
   updateEntity,
+  updateEntityPosition,
   removeEntity,
   selectEntity,
   deselectEntity,
   clearSelection,
   filterEntities,
   clearFilters,
-  updateEntityPositions,
+  setFilteredEntities,
+  clearFilteredEntities,
   setTrajectoryEnabled,
   setMaxPastPositions,
   setMaxProjectedPositions,
-  clearTrajectories
+  clearTrajectories,
+  updateTrajectorySettings
 } = entitySlice.actions;
 
 // Selectors
+export const selectEntitiesState = (state: RootState) => state.entities;
+
 export const selectEntityById = (state: RootState, id: string): Entity | undefined => state.entities.byId[id];
-export const selectAllEntities = (state: RootState): Entity[] => state.entities.allIds.map(id => state.entities.byId[id]);
-export const selectSelectedEntities = (state: RootState): Entity[] => 
-  state.entities.selectedIds.map(id => state.entities.byId[id]).filter(Boolean);
-export const selectFilteredEntities = (state: RootState): Entity[] => 
-  (state.entities.filteredIds.length > 0 ? state.entities.filteredIds : state.entities.allIds)
-    .map(id => state.entities.byId[id])
-    .filter(Boolean);
-export const selectEntitiesByType = (state: RootState, type: EntityType): Entity[] =>
-  state.entities.allIds
-    .map(id => state.entities.byId[id])
-    .filter(entity => entity.type === type);
-export const selectEntitiesByStatus = (state: RootState, status: EntityStatus): Entity[] =>
-  state.entities.allIds
-    .map(id => state.entities.byId[id])
-    .filter(entity => entity.status === status);
-export const selectTrajectoryEnabled = (state: RootState): boolean => state.entities.trajectoryEnabled;
-export const selectTrajectorySettings = (state: RootState) => ({
-  enabled: state.entities.trajectoryEnabled,
-  maxPastPositions: state.entities.maxPastPositions,
-  maxProjectedPositions: state.entities.maxProjectedPositions
-});
+
+export const selectAllEntities = createSelector(
+  selectEntitiesState,
+  (entities) => entities.allIds.map(id => entities.byId[id])
+);
+
+export const selectSelectedEntities = createSelector(
+  selectEntitiesState,
+  (entities) => entities.selectedIds.map(id => entities.byId[id])
+);
+
+export const selectFilteredEntities = createSelector(
+  selectEntitiesState,
+  (entities) => entities.filteredIds.length > 0 
+    ? entities.filteredIds.map(id => entities.byId[id])
+    : entities.allIds.map(id => entities.byId[id])
+);
+
+export const selectEntitiesByType = (type: EntityType) => createSelector(
+  selectAllEntities,
+  (entities) => entities.filter(entity => entity.type === type)
+);
+
+export const selectEntitiesByStatus = (status: EntityStatus) => createSelector(
+  selectAllEntities,
+  (entities) => entities.filter(entity => entity.status === status)
+);
+
+export const selectTrajectoryEnabled = createSelector(
+  selectEntitiesState,
+  (entities) => entities.trajectoryEnabled
+);
+
+export const selectTrajectorySettings = createSelector(
+  selectEntitiesState,
+  (entities) => entities.trajectorySettings
+);
 
 export default entitySlice.reducer; 

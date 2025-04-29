@@ -10,6 +10,9 @@ import { EntityRenderer } from './EntityRenderer';
 import EntityTrajectories from './EntityTrajectory';
 import ClientOnly from '../shared/layout/ClientOnly';
 
+// Safe browser detection
+const isBrowser = typeof window !== 'undefined';
+
 interface EntityWorldProps {
   onFpsChange?: (fps: number) => void;
 }
@@ -53,8 +56,11 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
   // Show trajectories for selected entity only or all entities based on settings
   const [showAllTrajectories, setShowAllTrajectories] = useState(false);
 
-  // Toggle all trajectories with 'T' key
+  // Toggle all trajectories with 'T' key - only on client
   useEffect(() => {
+    // Skip in SSR
+    if (!isBrowser) return;
+    
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 't' || e.key === 'T') {
         setShowAllTrajectories(prev => !prev);
@@ -67,20 +73,26 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
     };
   }, []);
   
+  // Safely group entities by type
   const groupedEntities = useMemo(() => {
     const grouped = new Map<EntityType, Entity[]>();
-    if (entities) {
+    if (entities && Array.isArray(entities)) {
       entities.forEach((entity) => {
-        const group = grouped.get(entity.type) || [];
-        group.push(entity);
-        grouped.set(entity.type, group);
+        if (entity && entity.type) {
+          const group = grouped.get(entity.type) || [];
+          group.push(entity);
+          grouped.set(entity.type, group);
+        }
       });
     }
     return grouped;
   }, [entities]);
   
-  // Calculate FPS
+  // Calculate FPS - only on client
   useFrame((_, delta) => {
+    // Skip in SSR
+    if (!isBrowser) return;
+    
     // Update FPS counter
     const now = Date.now();
     framesRef.current.push(now);
@@ -91,14 +103,18 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
     }
     
     // Update FPS every 500ms to avoid too frequent updates
-    if (now - lastFpsUpdateRef.current > 500) {
+    if (now - lastFpsUpdateRef.current > 500 && typeof onFpsChange === 'function') {
       lastFpsUpdateRef.current = now;
-      onFpsChange?.(framesRef.current.length);
+      onFpsChange(framesRef.current.length);
     }
   });
 
-  // Position camera and set initial target
+  // Position camera and set initial target - only on client
   useEffect(() => {
+    // Skip in SSR
+    if (!isBrowser) return;
+    
+    // Ensure refs exist before accessing
     if (cameraRef.current && controlsRef.current) {
       // Set better camera position for a wider view
       cameraRef.current.position.set(0, 60, 120);
@@ -168,7 +184,7 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
       ))}
       
       {/* Render entity trajectories if enabled */}
-      {trajectoryEnabled && (
+      {trajectoryEnabled && isBrowser && (
         <>
           {Array.from(groupedEntities.entries()).map(([type, entities]) => {
             // Filter entities based on showAllTrajectories flag
@@ -197,21 +213,23 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
       )}
       
       {/* Trajectory controls helper */}
-      <group position={[0, 0.1, 0]}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[80, 0, 80]} receiveShadow>
-          <planeGeometry args={[30, 10]} />
-          <meshStandardMaterial color="#222222" opacity={0.7} transparent />
-        </mesh>
-        <Text 
-          position={[80, 1, 80]}
-          fontSize={1.5}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {`Press 'T' to ${showAllTrajectories ? 'show selected entity only' : 'show all trajectories'}`}
-        </Text>
-      </group>
+      {isBrowser && (
+        <group position={[0, 0.1, 0]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[80, 0, 80]} receiveShadow>
+            <planeGeometry args={[30, 10]} />
+            <meshStandardMaterial color="#222222" opacity={0.7} transparent />
+          </mesh>
+          <Text 
+            position={[80, 1, 80]}
+            fontSize={1.5}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {`Press 'T' to ${showAllTrajectories ? 'show selected entity only' : 'show all trajectories'}`}
+          </Text>
+        </group>
+      )}
     </>
   );
 };

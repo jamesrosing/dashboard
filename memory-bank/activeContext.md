@@ -8,9 +8,120 @@ Current focus areas include:
 
 1. **Enhanced UI Layout Architecture**: Implementing a Split-Pane Layout with Resizable Containers to provide a more flexible and powerful dashboard experience while maintaining a predictable structure.
 
-2. **Hydration Issue Resolution**: Creating a ClientOnly wrapper component and ensuring consistent state between server and client rendering to address Next.js hydration issues with Three.js components.
+2. **Trajectory and Animation Enhancement**: Refining the trajectory visualization system and entity animation to provide smooth movement and clear path visualization for entities.
 
 3. **Advanced Entity Organization**: Developing a nested entity tree view organized by entity type with enhanced filtering capabilities and status visualization.
+
+## Recent Implementations
+
+### 1. ClientOnly wrapper for SSR compatibility
+
+We have successfully implemented a ClientOnly wrapper component to handle hydration issues with Three.js components:
+
+```typescript
+// ClientOnly.tsx
+import { useEffect, useState, ReactNode } from 'react';
+
+interface ClientOnlyProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+const ClientOnly = ({ children, fallback = null }: ClientOnlyProps) => {
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  return isClient ? <>{children}</> : <>{fallback}</>;
+};
+
+export default ClientOnly;
+```
+
+This component is now used to wrap all Three.js elements, ensuring they only render on the client side:
+
+```tsx
+<div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black to-gray-900">
+  <ClientOnly fallback={
+    <div className="flex items-center justify-center h-full">
+      <div className="text-gray-400">Initializing 3D view...</div>
+    </div>
+  }>
+    <Canvas shadows gl={{ antialias: true }}>
+      <fog attach="fog" args={['#050508', 100, 350]} />
+      <EntityWorldScene onFpsChange={onFpsChange} />
+    </Canvas>
+  </ClientOnly>
+</div>
+```
+
+### 2. Trajectory Visualization System
+
+We've enhanced the trajectory visualization system with:
+
+- Safe handling of entity trajectory data with proper validation
+- Improved animation effects for trajectory lines
+- Optimization for rendering performance
+- Browser compatibility checks for SSR scenarios
+- Proper error handling for edge cases
+- Toggling ability to show trajectories for all entities or just selected ones
+
+The implementation uses the `@react-three/drei` Line component with custom animations:
+
+```tsx
+// Ensure valid points arrays with minimum two distinct points
+const validPastPoints = useMemo(() => ensureValidPoints(pastPoints), [pastPoints]);
+const validFuturePoints = useMemo(() => ensureValidPoints(futurePoints), [futurePoints]);
+
+// Skip animations during SSR
+useFrame(({ clock }) => {
+  if (!isBrowser) return;
+  
+  // Animation effects for trajectory lines
+  // ...
+});
+```
+
+### 3. Entity Animation Implementation
+
+We've created an `AnimatedEntityMovement` component that handles:
+
+- Smooth position transitions using lerp interpolation
+- Proper rotation based on movement direction
+- Type-specific animation behavior (e.g., different for drones vs vehicles)
+- Performance optimizations for distant entities
+- Client-side only execution for SSR compatibility
+
+```tsx
+// Animation loop for entity movement
+useFrame((_, delta) => {
+  if (!groupRef.current) return;
+  
+  // Only animate moving entities
+  if (entity.type !== 'stationary') {
+    // Smoothly interpolate position with lerp
+    const newPosition = new THREE.Vector3();
+    newPosition.x = THREE.MathUtils.lerp(currentPosition.x, targetPosition.x, settings.positionLerpFactor);
+    // ...
+
+    // Calculate rotation based on movement direction
+    // ...
+  }
+});
+```
+
+### 4. SSR Hydration Issue Resolution
+
+We've successfully resolved the SSR hydration issues:
+
+- Added ClientOnly wrapper component for Three.js elements
+- Implemented safe browser detection with `typeof window !== 'undefined'`
+- Added proper useEffect guards for initialization code
+- Deferred Three.js canvas initialization until after hydration
+- Added type assertions for safely accessing DOM-specific properties
+- Fixed "Cannot access 'o' before initialization" errors in Vercel deployment
 
 ## Creative Phase Outcomes
 
@@ -56,51 +167,25 @@ We've completed five key creative phases that have defined our implementation ap
 
 Based on our Level 3 planning assessment, we are currently in Phase 1 of our implementation plan, focusing on the core entity visualization system. The project has been organized into three key phases:
 
-1. **Phase 1: Core Entity Visualization (Current)** 
-   - Completing the EntityWorld component with proper scene setup
-   - Implementing remaining entity facade types
-   - Integrating worker thread processing with efficient message passing
-   - Setting up performance benchmarking infrastructure
+1. **Phase 1: Core Entity Visualization (90% Complete)** 
+   - ✅ Completed EntityWorld component with proper scene setup
+   - ✅ Implemented ClientOnly wrapper for SSR compatibility
+   - ✅ Added trajectory visualization with safe handling
+   - ✅ Created entity animation system with smooth transitions
+   - ✅ Resolved SSR hydration issues with Three.js components
+   - 🔷 Implementing remaining performance optimizations
 
 2. **Phase 2: Real-time Data Integration (Next)** 
    - WebSocket integration for live entity updates
    - State management optimization for efficient updates
    - Entity selection and interaction capabilities
-   - Advanced visualization features (trajectories, status indicators)
+   - Advanced visualization features for status monitoring
 
 3. **Phase 3: User Interface Components (Final)** 
    - Dashboard layout with responsive design
    - Entity management panels with filtering and sorting
    - Detail views with property editing
    - Command and control interface with waypoint setting
-
-## Recent Work Context
-
-The most recent work has focused on resolving compatibility and implementation issues:
-
-1. **Three.js Compatibility Resolution**
-   - Fixed TypeScript linting errors in visualization components
-   - Resolved missing Three.js constants required by Troika (3000, 3001, 0)
-   - Added compatibility layer via module-fix.ts to handle missing constants
-   - Fixed rotation handling for proper entity orientation
-
-2. **EntityWorld Implementation**
-   - Created a comprehensive EntityWorld component with scene setup
-   - Implemented efficient entity grouping by type
-   - Added performance monitoring with FPS tracking
-   - Created proper camera controls and lighting
-
-3. **Entity Rendering System**
-   - Implemented a component-based architecture with React Three Fiber
-   - Created type-specific renderers with appropriate geometries
-   - Added status visualization through color coding
-   - Implemented efficient instance rendering
-
-4. **Mock Data Generation**
-   - Created a comprehensive mock entity generator
-   - Added randomized entity properties for testing
-   - Implemented realistic initial distribution of entities
-   - Added simulated movement for testing dynamic updates
 
 ## Active Decisions
 
@@ -124,9 +209,10 @@ The most recent work has focused on resolving compatibility and implementation i
 
 4. **Performance Optimization Strategy**
    - Using instanced rendering for similar entities
-   - Implementing custom BufferGeometryUtils for geometry operations
+   - Implementing LOD system for distance-based detail levels
    - Creating efficient update cycles with React hooks
    - Measuring performance with FPS tracking
+   - Adding safe handling for trajectory data with validation
 
 5. **UI Layout Architecture**
    - Implementing Split-Pane Layout with Resizable Containers
@@ -136,25 +222,26 @@ The most recent work has focused on resolving compatibility and implementation i
    - Adding panel state persistence in localStorage
 
 6. **Hydration Strategy**
-   - Creating a ClientOnly wrapper component for Three.js elements
-   - Implementing consistent state initialization between server and client
-   - Deferring dynamic content loading until after hydration
-   - Using deterministic initial state generators
-   - Applying useEffect for client-only state modifications
+   - ✅ Created ClientOnly wrapper component for Three.js elements
+   - ✅ Implemented consistent state initialization between server and client
+   - ✅ Deferred Three.js rendering until after hydration
+   - ✅ Added browser detection with typeof window checks
+   - ✅ Using safe type assertions for DOM properties
 
 ## Current Challenges
 
 1. **TypeScript Integration**
-   - Ensuring proper typing for Three.js and React Three Fiber components
-   - Resolving compatibility issues between libraries
+   - ✅ Resolved typing issues for Three.js and React Three Fiber components
+   - ✅ Fixed type errors in trajectory and animation components
    - Maintaining type safety in component props
-   - Fixing linting errors for cleaner code
+   - Fixing remaining linting errors for cleaner code
 
 2. **Performance with Large Entity Counts**
+   - ✅ Implemented LOD system for distance-based detail reduction
+   - ✅ Added efficient entity animation system
+   - ✅ Created optimized trajectory visualization
    - Optimizing for 100+ entities without performance degradation
-   - Ensuring efficient updates for moving entities
-   - Minimizing unnecessary renders
-   - Improving memory usage for large entity sets
+   - Adding frustum culling for off-screen entities
 
 3. **Real-time Data Integration**
    - Designing efficient data flow for entity updates
@@ -163,19 +250,18 @@ The most recent work has focused on resolving compatibility and implementation i
    - Creating proper WebSocket integration
 
 4. **Hydration Issues**
-   - Redux store initialization creating server/client rendering mismatches
-   - Client-side Three.js components causing hydration warnings
-   - WebSocket service attempting to connect during client-side rendering
-   - Mock entities loading conditionally based on environment
-   - Time-based animations and simulations causing initial render differences
+   - ✅ Resolved "Cannot access 'o' before initialization" errors
+   - ✅ Fixed Redux store initialization for consistent server/client rendering
+   - ✅ Resolved Three.js component hydration warnings
+   - ✅ Added safe initialization for browser-specific code
+   - ✅ Created proper loading states during hydration
 
 ## Immediate Next Steps
 
-1. **Enhance Entity Visualization**
-   - Improve entity-specific visualizations with more detailed models
-   - Add animation for entity movement and status changes
-   - Implement trajectory visualization
-   - Create better selection feedback
+1. **Complete Entity Visualization**
+   - Add frustum culling for off-screen entities
+   - Add entity type-specific animation effects
+   - Optimize memory usage for large entity sets
 
 2. **Add Filtering and Grouping**
    - Implement entity filtering by type and status
@@ -183,32 +269,100 @@ The most recent work has focused on resolving compatibility and implementation i
    - Add saved filter configurations
    - Implement visual distinction for filtered entities
 
-3. **Enhance UI Components**
-   - Improve entity detail display with more information
-   - Add charts and graphs for entity metrics
-   - Create better status visualization
-   - Implement command input for entity control
-
-4. **WebSocket Integration**
-   - Connect to WebSocket server for real-time updates
-   - Implement efficient message handling
-   - Create reconnection management
-   - Add status monitoring for connection
-
-5. **Resolve Hydration Issues**
-   - Implement proper SSR guards for client-only components
-   - Create a ClientOnly wrapper component for Three.js elements
-   - Defer WebSocket connections until after hydration
-   - Ensure consistent initial state between server and client
-   - Move simulated entity movement to client-side effect hooks
-
-6. **Implement Enhanced UI Layout**
-   - Create ClientOnly wrapper component
-   - Implement Split-Pane container system
+3. **Implement UI Layout Architecture**
+   - Create Split-Pane container system
    - Develop resizable and collapsible panels
    - Create nested entity tree view by type
    - Add panel state persistence
-   - Ensure consistent state between server and client
+   - Implement panel maximization and restore
+
+4. **Prepare for WebSocket Integration**
+   - Design WebSocket message protocol
+   - Create connection management system
+   - Implement message serialization/deserialization
+   - Add connection health monitoring
+
+## Implementation Details
+
+1. **SSR Compatibility Components**
+   ```tsx
+   // ClientOnly.tsx
+   const ClientOnly = ({ children, fallback = null }: ClientOnlyProps) => {
+     const [isClient, setIsClient] = useState(false);
+     
+     useEffect(() => {
+       setIsClient(true);
+     }, []);
+     
+     return isClient ? <>{children}</> : <>{fallback}</>;
+   };
+   ```
+
+2. **Entity Movement Animation**
+   ```tsx
+   // AnimatedEntityMovement.tsx
+   const AnimatedEntityMovement: React.FC<AnimatedEntityMovementProps> = ({ 
+     entity, 
+     children 
+   }) => {
+     // Animation settings and refs
+     // ...
+     
+     // Animation loop
+     useFrame((_, delta) => {
+       // Smooth position interpolation
+       // Direction-based rotation
+       // Type-specific behavior
+     });
+     
+     return (
+       <group ref={groupRef} position={positionToVector3(entity.position)}>
+         {children}
+       </group>
+     );
+   };
+   ```
+
+3. **Trajectory Visualization**
+   ```tsx
+   // EntityTrajectory.tsx
+   const EntityTrajectory: React.FC<EntityTrajectoryProps> = ({ 
+     entity, 
+     settings
+   }) => {
+     // Calculate and validate trajectory points
+     // ...
+     
+     return (
+       <group>
+         {/* Past trajectory line */}
+         <Line
+           ref={pastLineRef}
+           points={validPastPoints}
+           color={settings.pastColor}
+           lineWidth={settings.width}
+           transparent
+           opacity={settings.opacity}
+         />
+         
+         {/* Future trajectory line */}
+         {settings.showFuture && (
+           <Line
+             ref={futureLineRef}
+             points={validFuturePoints}
+             color={settings.futureColor}
+             lineWidth={settings.width * 0.8}
+             transparent
+             opacity={settings.opacity * 0.7}
+             dashed={true}
+             dashSize={0.5}
+             dashScale={10}
+           />
+         )}
+       </group>
+     );
+   };
+   ```
 
 ## Current Technical Stack
 

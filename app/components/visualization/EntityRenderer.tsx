@@ -2,9 +2,12 @@ import React, { useMemo, useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { Instance, Instances } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Entity, EntityType, getStatusColor } from '../../../lib/state/entityTypes';
+import { Entity, EntityType, getStatusColor, positionToVector3, rotationToEuler } from '../../../lib/state/entityTypes';
 import { useAppSelector } from '../../../lib/state/hooks';
 import AnimatedEntityMovement from './AnimatedEntityMovement';
+
+// Safe browser detection
+const isBrowser = typeof window !== 'undefined';
 
 interface EntityRendererProps {
   entities: Entity[];
@@ -19,6 +22,12 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
   
   // State for tracking current LOD level
   const [currentLOD, setCurrentLOD] = useState(0);
+  
+  // Reference to the instance mesh
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  
+  // Create dummy for matrix calculations
+  const dummy = useMemo(() => new THREE.Object3D(), []);
   
   // Determine the appropriate geometry based on entity type and LOD level
   const geometry = useMemo(() => {
@@ -111,6 +120,48 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
     }
   }, [currentLOD]);
 
+  // Update instances on each frame
+  useFrame(() => {
+    // Skip in SSR
+    if (!isBrowser || !meshRef.current || !entities.length) return;
+
+    // Make sure we have a valid instance count
+    if (meshRef.current.count !== entities.length) {
+      meshRef.current.count = entities.length;
+    }
+    
+    // Update each entity's position and rotation
+    entities.forEach((entity, i) => {
+      if (!entity || !entity.position || !meshRef.current) return;
+      
+      // Position the entity
+      dummy.position.copy(positionToVector3(entity.position));
+      
+      // Add a vertical offset based on entity type
+      if (entityType === EntityType.DRONE) {
+        dummy.position.y += 2; // Drones float higher
+      }
+      
+      // Set rotation based on entity type
+      if (entity.rotation) {
+        const rotation = rotationToEuler(entity.rotation);
+        dummy.rotation.copy(rotation);
+      } else {
+        // Default rotation if none specified
+        dummy.rotation.set(0, 0, 0);
+      }
+      
+      // Update matrix and apply to the instanced mesh
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    });
+    
+    // Mark the instance matrices as needing an update
+    if (meshRef.current) {
+      meshRef.current.instanceMatrix.needsUpdate = true;
+    }
+  });
+
   // No entities to render
   if (entities.length === 0) {
     return null;
@@ -123,6 +174,7 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
         limit={1000} // Maximum number of instances
         geometry={geometry}
         material={material}
+        ref={meshRef}
       >
         {entities
           .filter(entity => entity.id !== selectedEntityId)

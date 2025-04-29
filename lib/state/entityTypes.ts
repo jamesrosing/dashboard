@@ -17,7 +17,8 @@ export enum EntityStatus {
   STANDBY = 'standby',
   WARNING = 'warning',
   CRITICAL = 'critical',
-  OFFLINE = 'offline'
+  OFFLINE = 'offline',
+  MAINTENANCE = 'maintenance'
 }
 
 /**
@@ -44,6 +45,15 @@ export enum TaskStatus {
  * Position interface - uses Vector3 compatible format
  */
 export interface Position {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * Rotation interface - uses Euler compatible format
+ */
+export interface Rotation {
   x: number;
   y: number;
   z: number;
@@ -82,12 +92,18 @@ export interface SensorReading {
  */
 export interface Entity {
   id: string;
+  name: string;
   type: EntityType;
-  position: Position;
-  rotation: Position; // Using Position for simplicity in the API
-  velocity: Position;
-  acceleration: Position;
   status: EntityStatus;
+  position: Position;
+  rotation: Rotation;
+  velocity?: Position;  // Make this optional and add it to fix TypeScript errors
+  speed: number;
+  battery: number;
+  temperature: number;
+  lastUpdateTime: number;
+  pastPositions?: Position[];  // For trajectory visualization
+  futurePositions?: Position[]; // For projected path visualization
   health: {
     batteryLevel: number; // 0-100%
     fuelLevel?: number; // 0-100%
@@ -97,12 +113,9 @@ export interface Entity {
   };
   sensors: Record<string, SensorReading>;
   tasks: Task[];
-  trajectory: {
-    pastPositions: Position[]; // Limited array of past positions
-    projectedPath: Position[]; // Calculated future path
-  };
   metadata: Record<string, any>; // Custom attributes
   lastUpdated: number; // timestamp
+  [key: string]: any;
 }
 
 /**
@@ -120,6 +133,13 @@ export function vector3ToPosition(vector: THREE.Vector3): Position {
 }
 
 /**
+ * Helper to convert Rotation to THREE.Euler
+ */
+export function rotationToEuler(rotation: Rotation): THREE.Euler {
+  return new THREE.Euler(rotation.x, rotation.y, rotation.z);
+}
+
+/**
  * Get color for entity status
  */
 export function getStatusColor(status: EntityStatus): string {
@@ -134,7 +154,23 @@ export function getStatusColor(status: EntityStatus): string {
       return '#ff2222'; // Brighter Red
     case EntityStatus.OFFLINE:
       return '#cccccc'; // Lighter Gray
+    case EntityStatus.MAINTENANCE:
+      return '#ff00ff'; // Brighter Magenta
     default:
       return '#ffffff'; // White
   }
+}
+
+/**
+ * Type guard to check if a string is a valid EntityType
+ */
+export function isEntityType(type: string): type is EntityType {
+  return Object.values(EntityType).includes(type as EntityType);
+}
+
+/**
+ * Type guard to check if a string is a valid EntityStatus
+ */
+export function isEntityStatus(status: string): status is EntityStatus {
+  return Object.values(EntityStatus).includes(status as EntityStatus);
 } 

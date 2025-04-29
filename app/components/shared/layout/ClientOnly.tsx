@@ -1,9 +1,13 @@
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState, ReactNode } from 'react';
 
 interface ClientOnlyProps {
   children: ReactNode;
   fallback?: ReactNode;
 }
+
+// Use useLayoutEffect on client, useEffect during SSR
+const useIsomorphicLayoutEffect = 
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 /**
  * Component that ensures children are only rendered on the client side
@@ -12,7 +16,7 @@ interface ClientOnlyProps {
 const ClientOnly = ({ children, fallback = null }: ClientOnlyProps) => {
   const [isClient, setIsClient] = useState(false);
   
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     // Set isClient to true when component mounts on the client
     setIsClient(true);
   }, []);
