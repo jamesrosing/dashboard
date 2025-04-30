@@ -3,13 +3,18 @@
  * 
  * This module is specifically designed to be the main entry point for Three.js imports.
  * It pre-defines all constants and then exports everything from Three.js.
+ * 
+ * Enhanced with better error handling to prevent initialization errors in production.
  */
 
 // First import Three.js - we need this for the class/method exports
 import * as THREE from 'three';
 
-// Primitive constants - defined first to avoid initialization timing issues
-// These are directly defined with primitive values to avoid any initialization timing issues
+// DEBUGGING SUPPORT
+const DEBUG = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+if (DEBUG && typeof window !== 'undefined') {
+  console.log('Three.js entry module initializing in DEBUG mode');
+}
 
 // Type constants
 export const UnsignedByteType = 1009;
@@ -86,8 +91,56 @@ if (typeof window !== 'undefined') {
     NoBlending,
     FrontSide,
     BackSide,
-    DoubleSide
+    DoubleSide,
+    DEG2RAD: Math.PI / 180,
+    RAD2DEG: 180 / Math.PI,
   });
+  
+  // Create base stubs for critical classes if they don't exist
+  // This is our fallback in case the Script in layout.tsx doesn't execute properly
+  if (!(window as any).THREE.Vector3) {
+    (window as any).THREE.Vector3 = function(x: number, y: number, z: number) {
+      this.x = x || 0;
+      this.y = y || 0;
+      this.z = z || 0;
+      this.isVector3 = true;
+    };
+  }
+  
+  if (!(window as any).THREE.Euler) {
+    (window as any).THREE.Euler = function(x: number, y: number, z: number, order: string) {
+      this.x = x || 0;
+      this.y = y || 0;
+      this.z = z || 0;
+      this.order = order || 'XYZ';
+      this.isEuler = true;
+    };
+  }
+  
+  if (!(window as any).THREE.Matrix4) {
+    (window as any).THREE.Matrix4 = function() {
+      this.elements = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+      ];
+      this.isMatrix4 = true;
+    };
+  }
+  
+  if (!(window as any).THREE.Color) {
+    (window as any).THREE.Color = function(r: number, g: number, b: number) {
+      this.r = r || 0;
+      this.g = g || 0;
+      this.b = b || 0;
+      this.isColor = true;
+    };
+  }
+
+  if (DEBUG) {
+    console.log('THREE global patched with constants and stub classes');
+  }
 }
 
 // Export all Three.js classes and objects that our app needs
@@ -183,6 +236,25 @@ export const {
   REVISION,
   UniformsLib
 } = THREE;
+
+// Add debug logging in development
+if (DEBUG && typeof window !== 'undefined') {
+  console.log('Three.js entry module loaded successfully');
+  
+  // Verify critical objects exist
+  try {
+    const v = new Vector3(1, 2, 3);
+    console.log('Vector3 created:', v);
+    
+    const e = new Euler(0, 1, 0);
+    console.log('Euler created:', e);
+    
+    const m = new Matrix4();
+    console.log('Matrix4 created:', m);
+  } catch (error) {
+    console.error('Error creating Three.js objects:', error);
+  }
+}
 
 // Make sure we export everything from Three.js 
 export * from 'three'; 

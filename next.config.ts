@@ -26,6 +26,28 @@ const nextConfig: NextConfig = {
       // Use our simplified entry module that defines constants before importing
       config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-entry.ts');
       
+      // Ensure optimized chunking for Three.js
+      if (!config.optimization) {
+        config.optimization = {};
+      }
+      
+      if (!config.optimization.splitChunks) {
+        config.optimization.splitChunks = { cacheGroups: {} };
+      }
+      
+      // Ensure Three.js is properly chunked
+      if (!config.optimization.splitChunks.cacheGroups) {
+        config.optimization.splitChunks.cacheGroups = {};
+      }
+      
+      config.optimization.splitChunks.cacheGroups.three = {
+        test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
+        name: 'three-vendor',
+        priority: 10,
+        enforce: true,
+        chunks: 'all',
+      };
+      
       // Ensure our initialize.ts gets bundled first in chunks that use Three.js
       if (!config.module) {
         config.module = { rules: [] };
@@ -34,9 +56,6 @@ const nextConfig: NextConfig = {
       if (!config.module.rules) {
         config.module.rules = [];
       }
-      
-      // Remove the custom babel-loader rule that was causing build issues
-      // Next.js already processes these files internally
       
       // This rule ensures that imports in node_modules aren't affected by our alias
       config.module.rules.push({

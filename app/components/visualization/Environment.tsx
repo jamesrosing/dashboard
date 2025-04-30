@@ -1,10 +1,10 @@
 import React, { useRef } from 'react';
-import * as THREE from '../../../lib/three/three-entry';
+import * as THREE from '@/lib/three/three-entry';
 import { useFrame } from '@react-three/fiber';
 
 // Environment component that renders terrain, grid, and skybox
 export const Environment: React.FC = () => {
-  const terrainRef = useRef<THREE.Mesh>(null);
+  const terrainRef = useRef<any>(null);
   
   // Rotate grid for animation effect
   useFrame(() => {

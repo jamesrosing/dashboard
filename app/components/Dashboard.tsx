@@ -16,6 +16,7 @@ import EntityWorld from './visualization/EntityWorld';
 import EntityDetails from './shared/EntityDetails';
 import StatusBar from './shared/StatusBar';
 import PerformanceMetrics from './shared/PerformanceMetrics';
+import ThreeDiagnostics from './ThreeDiagnostics';
 
 export default function Dashboard() {
   const entities = useAppSelector(selectAllEntities);
@@ -187,6 +188,11 @@ export default function Dashboard() {
         <StatusBar fps={fps} />
         <div>Real-time Multi-Entity Dashboard Demo</div>
       </footer>
+      
+      {/* Three.js Diagnostics Tool */}
+      <ClientOnly>
+        <ThreeDiagnostics />
+      </ClientOnly>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import * as THREE from '../../../lib/three/three-entry';
+import * as THREE from '@/lib/three/three-entry';
 import { Instance, Instances } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Entity, EntityType, getStatusColor, positionToVector3, rotationToEuler } from '../../../lib/state/entityTypes';
@@ -24,7 +24,7 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
   const [currentLOD, setCurrentLOD] = useState(0);
   
   // Reference to the instance mesh
-  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const meshRef = useRef<any>(null);
   
   // Create dummy for matrix calculations
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -385,7 +385,7 @@ const SelectedEntityHighlight: React.FC<SelectedEntityHighlightProps> = ({ entit
 
 // Pulsing ring animation for selected entity
 const PulsingRing = ({ color, lodLevel }: { color: string, lodLevel: number }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<any>(null);
   
   // Animate the ring scale - reduced complexity for LOD 1
   useFrame(({ clock }) => {

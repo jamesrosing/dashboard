@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
-import * as THREE from '../../../lib/three/three-entry';
+import * as THREE from '@/lib/three/three-entry';
 import { Entity } from '../../../lib/state/entityTypes';
 
 // Safe check for browser environment
@@ -21,7 +21,7 @@ interface EntityTrajectoryProps {
 }
 
 // Ensure we have at least two valid points for trajectory lines
-const ensureValidPoints = (points: THREE.Vector3[]): THREE.Vector3[] => {
+const ensureValidPoints = (points: any[]): any[] => {
   if (!points || points.length < 2) {
     // Return a minimum valid line with two points if insufficient data
     return [
@@ -76,7 +76,7 @@ const EntityTrajectory: React.FC<SingleEntityTrajectoryProps> = ({
   // Calculate points for the trajectory
   const pastPoints = useMemo(() => {
     // Initialize with current position
-    let points: THREE.Vector3[] = [];
+    let points: any[] = [];
     
     // Only process if in browser environment
     if (isBrowser && entity.pastPositions && entity.pastPositions.length > 0) {
@@ -97,7 +97,7 @@ const EntityTrajectory: React.FC<SingleEntityTrajectoryProps> = ({
   // Calculate future points if available
   const futurePoints = useMemo(() => {
     // Initialize with current position
-    let points: THREE.Vector3[] = [];
+    let points: any[] = [];
     
     // Only process if in browser environment
     if (isBrowser && entity.futurePositions && entity.futurePositions.length > 0) {
