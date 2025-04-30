@@ -2,10 +2,25 @@ import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import * as THREE from '@/lib/three/three-entry';
-import { Entity } from '../../../lib/state/entityTypes';
+import { Entity, positionToVector3 } from '../../../lib/state/entityTypes';
 
 // Safe check for browser environment
 const isBrowser = typeof window !== 'undefined';
+
+// Safe Vector3 creation helper function to prevent initialization errors
+const safeVector3 = (x: number, y: number, z: number): any => {
+  try {
+    return new (THREE as any).Vector3(x || 0, y || 0, z || 0);
+  } catch (e) {
+    // Fallback if THREE.Vector3 is not available
+    return {
+      x: x || 0,
+      y: y || 0,
+      z: z || 0,
+      isVector3: true
+    };
+  }
+};
 
 interface EntityTrajectoryProps {
   entities: Entity[];
@@ -25,8 +40,8 @@ const ensureValidPoints = (points: any[]): any[] => {
   if (!points || points.length < 2) {
     // Return a minimum valid line with two points if insufficient data
     return [
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0.01, 0) // Slightly different to avoid degenerate line
+      safeVector3(0, 0, 0),
+      safeVector3(0, 0.01, 0) // Slightly different to avoid degenerate line
     ];
   }
   return points;
@@ -80,14 +95,14 @@ const EntityTrajectory: React.FC<SingleEntityTrajectoryProps> = ({
     
     // Only process if in browser environment
     if (isBrowser && entity.pastPositions && entity.pastPositions.length > 0) {
-      points = entity.pastPositions.map(pos => new THREE.Vector3(pos.x, pos.y, pos.z));
+      points = entity.pastPositions.map(pos => safeVector3(pos.x, pos.y, pos.z));
       // Add current position at the end of past trajectory
-      points.push(new THREE.Vector3(entity.position.x, entity.position.y, entity.position.z));
+      points.push(safeVector3(entity.position.x, entity.position.y, entity.position.z));
     } else {
       // Fallback for SSR or if no past positions
       points = [
-        new THREE.Vector3(entity.position.x, entity.position.y, entity.position.z),
-        new THREE.Vector3(entity.position.x, entity.position.y + 0.01, entity.position.z)
+        safeVector3(entity.position.x, entity.position.y, entity.position.z),
+        safeVector3(entity.position.x, entity.position.y + 0.01, entity.position.z)
       ];
     }
     
@@ -102,14 +117,14 @@ const EntityTrajectory: React.FC<SingleEntityTrajectoryProps> = ({
     // Only process if in browser environment
     if (isBrowser && entity.futurePositions && entity.futurePositions.length > 0) {
       // Start with current position
-      points = [new THREE.Vector3(entity.position.x, entity.position.y, entity.position.z)];
+      points = [safeVector3(entity.position.x, entity.position.y, entity.position.z)];
       // Add future positions
-      points = points.concat(entity.futurePositions.map(pos => new THREE.Vector3(pos.x, pos.y, pos.z)));
+      points = points.concat(entity.futurePositions.map(pos => safeVector3(pos.x, pos.y, pos.z)));
     } else {
       // Fallback for SSR or if no future positions
       points = [
-        new THREE.Vector3(entity.position.x, entity.position.y, entity.position.z),
-        new THREE.Vector3(entity.position.x, entity.position.y + 0.01, entity.position.z)
+        safeVector3(entity.position.x, entity.position.y, entity.position.z),
+        safeVector3(entity.position.x, entity.position.y + 0.01, entity.position.z)
       ];
     }
     

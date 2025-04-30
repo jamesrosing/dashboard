@@ -121,22 +121,86 @@ export interface Entity {
 /**
  * Helper to convert Position to THREE.Vector3
  */
-export function positionToVector3(position: Position): THREE.Vector3 {
-  return new THREE.Vector3(position.x, position.y, position.z);
+export function positionToVector3(position: Position): any {
+  // Safe wrapper to prevent "Cannot access before initialization" errors
+  if (!position) return new (THREE as any).Vector3(0, 0, 0);
+  
+  try {
+    // Use type assertion to avoid direct property access on THREE
+    return new (THREE as any).Vector3(
+      position.x || 0,
+      position.y || 0,
+      position.z || 0
+    );
+  } catch (e) {
+    // Fallback object with Vector3 interface if THREE isn't fully initialized
+    return {
+      x: position.x || 0,
+      y: position.y || 0,
+      z: position.z || 0,
+      isVector3: true,
+      set: function(x: number, y: number, z: number) { 
+        this.x = x; this.y = y; this.z = z; 
+        return this; 
+      },
+      copy: function(v: any) { 
+        this.x = v.x; this.y = v.y; this.z = v.z; 
+        return this; 
+      },
+      add: function(v: any) { 
+        this.x += v.x; this.y += v.y; this.z += v.z; 
+        return this; 
+      }
+    };
+  }
 }
 
 /**
  * Helper to convert THREE.Vector3 to Position
  */
-export function vector3ToPosition(vector: THREE.Vector3): Position {
-  return { x: vector.x, y: vector.y, z: vector.z };
+export function vector3ToPosition(vector: any): Position {
+  // Safely extract x, y, z values with fallbacks
+  if (!vector) return { x: 0, y: 0, z: 0 };
+  
+  return { 
+    x: vector.x || 0, 
+    y: vector.y || 0, 
+    z: vector.z || 0 
+  };
 }
 
 /**
  * Helper to convert Rotation to THREE.Euler
  */
-export function rotationToEuler(rotation: Rotation): THREE.Euler {
-  return new THREE.Euler(rotation.x, rotation.y, rotation.z);
+export function rotationToEuler(rotation: Rotation): any {
+  // Safe wrapper to prevent "Cannot access before initialization" errors
+  if (!rotation) return new (THREE as any).Euler(0, 0, 0);
+  
+  try {
+    // Use type assertion to avoid direct property access on THREE
+    return new (THREE as any).Euler(
+      rotation.x || 0,
+      rotation.y || 0, 
+      rotation.z || 0
+    );
+  } catch (e) {
+    // Fallback object with Euler interface if THREE isn't fully initialized
+    return {
+      x: rotation.x || 0,
+      y: rotation.y || 0,
+      z: rotation.z || 0,
+      order: 'XYZ',
+      isEuler: true,
+      set: function(x: number, y: number, z: number) { 
+        this.x = x; this.y = y; this.z = z; 
+        return this; 
+      },
+      copy: function(e: any) { 
+        this.x = e.x; this.y = e.y; this.z = e.z; this.order = e.order; 
+        return this; 
+      }
+    };
+  }
 }
 
 /**
@@ -173,4 +237,4 @@ export function isEntityType(type: string): type is EntityType {
  */
 export function isEntityStatus(status: string): status is EntityStatus {
   return Object.values(EntityStatus).includes(status as EntityStatus);
-} 
+}

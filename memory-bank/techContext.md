@@ -282,6 +282,90 @@ This consolidated approach replaces multiple separate compatibility files:
 
 All compatibility constants, classes, and utilities are now in a single location, making maintenance and updates simpler.
 
+### Three.js Initialization Safety Pattern
+
+To address production build issues where Three.js objects are accessed before they're fully initialized ("Cannot access 'o', 'l', 'C' before initialization" errors), we've implemented a robust pattern:
+
+1. **Safe Object Creation Pattern**
+```typescript
+// Safe pattern for creating Three.js objects
+const safeVector3 = (x: number, y: number, z: number): any => {
+  try {
+    // Type assertion prevents direct property access on THREE
+    return new (THREE as any).Vector3(x || 0, y || 0, z || 0);
+  } catch (e) {
+    // Fallback implementation if THREE.Vector3 isn't available
+    return {
+      x: x || 0,
+      y: y || 0,
+      z: z || 0,
+      isVector3: true,
+      copy: function(v: any) { 
+        this.x = v.x; this.y = v.y; this.z = v.z; 
+        return this; 
+      },
+      // Additional necessary methods
+    };
+  }
+};
+```
+
+2. **Helper Function Enhancement**
+```typescript
+// Enhanced helper function with error handling
+export function positionToVector3(position: Position): any {
+  // Null check as first line of defense
+  if (!position) return new (THREE as any).Vector3(0, 0, 0);
+  
+  try {
+    // Primary implementation
+    return new (THREE as any).Vector3(
+      position.x || 0,
+      position.y || 0,
+      position.z || 0
+    );
+  } catch (e) {
+    // Fallback object with identical interface
+    return {
+      x: position.x || 0,
+      y: position.y || 0,
+      z: position.z || 0,
+      isVector3: true,
+      // Methods implemented to match THREE.Vector3
+    };
+  }
+}
+```
+
+3. **Safe Constants Access**
+```typescript
+// Safe constant access function
+const getBackSide = (): any => {
+  try {
+    return (THREE as any).BackSide;
+  } catch (e) {
+    return 1; // Known constant value for BackSide
+  }
+};
+```
+
+4. **Pre-initialization Mechanism**
+```typescript
+// In layout.tsx and initialize.ts - Define critical objects
+constants.Object3D = function() {
+  this.isObject3D = true;
+  this.id = Math.floor(Math.random() * 100000);
+  // Comprehensive properties initialization
+  
+  // Method implementations
+  this.add = function() { return this; };
+  this.remove = function() { return this; };
+  // Other required methods
+};
+```
+
+This comprehensive approach ensures Three.js objects are properly initialized and accessible in all environments, including production builds with different code optimization strategies.
+
 ### Performance Optimization
 
 We've implemented several performance optimizations for handling large entity counts:

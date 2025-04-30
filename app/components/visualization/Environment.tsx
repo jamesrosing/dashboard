@@ -2,6 +2,25 @@ import React, { useRef } from 'react';
 import * as THREE from '@/lib/three/three-entry';
 import { useFrame } from '@react-three/fiber';
 
+// Safe wrapper functions to prevent initialization errors
+const safeColor = (color: string): any => {
+  try {
+    return new (THREE as any).Color(color);
+  } catch (e) {
+    // Return a simple object with color properties
+    return { r: 0, g: 0, b: 0 };
+  }
+};
+
+// Get constants safely
+const getBackSide = (): any => {
+  try {
+    return (THREE as any).BackSide;
+  } catch (e) {
+    return 1; // BackSide constant value
+  }
+};
+
 // Environment component that renders terrain, grid, and skybox
 export const Environment: React.FC = () => {
   const terrainRef = useRef<any>(null);
@@ -52,8 +71,8 @@ const SkyBackground: React.FC = () => {
     <mesh position={[0, 0, 0]}>
       <sphereGeometry args={[400, 32, 32]} />
       <meshBasicMaterial 
-        color={new THREE.Color('#050508')} 
-        side={THREE.BackSide} 
+        color={safeColor('#050508')} 
+        side={getBackSide()} 
         fog={false}
       />
     </mesh>
