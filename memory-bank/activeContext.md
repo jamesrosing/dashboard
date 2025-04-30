@@ -24,6 +24,10 @@ Current focus areas include:
 
 9. **Message Queue and Handling**: Implementing message queuing for offline scenarios and efficient message processing for entity updates.
 
+10. **Three.js Initialization Enhancement**: Implementing a comprehensive approach to ensure reliable Three.js initialization across development and production environments, fixing "Cannot access 'D' before initialization" errors.
+
+11. **Suspense-enabled Asset Loading**: Integrating suspend-react for React Suspense support in loading Three.js assets like textures, models, and materials.
+
 ## Recent Implementations
 
 ### 1. Three.js Initialization Fix for Production Builds

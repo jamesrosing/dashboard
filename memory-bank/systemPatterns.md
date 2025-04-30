@@ -18,6 +18,10 @@ dashboard/
 │   ├── state/          # Redux state management
 │   ├── websocket/      # WebSocket communication
 │   ├── three/          # Three.js utilities and helpers
+│   │   ├── initialize.ts  # Three.js initialization
+│   │   ├── three-entry.ts # Constant pre-initialization
+│   │   ├── safeCreators.ts # Safe object creation utilities
+│   │   └── suspendedLoader.ts # Suspense-enabled asset loading
 │   └── workers/        # Web Worker implementations
 └── public/           # Static assets
 ```
@@ -272,3 +276,46 @@ interface FilterCriteria {
 - Efficient spatial queries for large entity sets
 - Optimizing render cycles to prevent jank
 - Minimizing network latency for command operations 
+
+## Three.js Initialization Architecture
+
+```mermaid
+flowchart TD
+    Start["Application Start"] --> Script["Script tag with beforeInteractive"]
+    Script --> Constants["Pre-define critical THREE constants"]
+    Constants --> StubClasses["Create stub class implementations"]
+    StubClasses --> ThreeEntry["three-entry.ts module loads"]
+    ThreeEntry --> ReExport["Re-export THREE with safe constants"]
+    ReExport --> ComponentImport["Component imports THREE"]
+    
+    ComponentImport --> SafeCreation["Safe object creation with safeCreators.ts"]
+    SafeCreation --> AssetLoading["Asset loading with suspend-react"]
+    
+    subgraph "Initialization Safety"
+        Constants
+        StubClasses
+        SafeCreation
+    end
+    
+    subgraph "Asset Management"
+        AssetLoading --> TextureLoading["Texture loading with suspense"]
+        AssetLoading --> ModelLoading["Model loading with suspense"]
+        AssetLoading --> MaterialCreation["Safe material creation"]
+    end
+    
+    subgraph "Production Build"
+        WebpackConfig["Webpack configuration"]
+        ChunkLoading["Optimized chunk loading"]
+        StringReplacement["Runtime module patching"]
+        
+        WebpackConfig --> ChunkLoading
+        WebpackConfig --> StringReplacement
+    end
+```
+
+### Three.js Initialization Patterns
+- **Pre-initialization Script**: Using Next.js Script with beforeInteractive strategy to define constants and stub implementations
+- **Safe Entry Module**: Comprehensive module that defines constants before importing Three.js
+- **Safe Object Creation**: Utility functions with try/catch and fallback implementations
+- **Asset Loading with Suspense**: Using suspend-react for React Suspense-enabled asset loading
+- **Production Build Optimization**: Specialized Webpack configuration for proper Three.js initialization in production 
