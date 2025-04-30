@@ -12,6 +12,10 @@ Current focus areas include:
 
 3. **Advanced Entity Organization**: Developing a nested entity tree view organized by entity type with enhanced filtering capabilities and status visualization.
 
+4. **Performance Optimization**: Implementing advanced optimization techniques including frustum culling, selective rendering, and memory usage optimization to support 100+ entities at 60fps.
+
+5. **Compatibility Improvements**: Consolidating Three.js compatibility solutions into a single approach with comprehensive support for various libraries and SSR scenarios.
+
 ## Recent Implementations
 
 ### 1. ClientOnly wrapper for SSR compatibility
@@ -543,4 +547,121 @@ Recent work has primarily focused on the core visualization architecture:
    - Implement entity instancing for performance with large entity counts
    - Create the Split-Pane layout system based on UI Layout creative phase
    - Implement the ClientOnly wrapper component for hydration resolution
-   - Develop the nested entity tree view with type-based organization 
+   - Develop the nested entity tree view with type-based organization
+
+## Recently Completed Tasks
+
+### 1. Frustum Culling Implementation
+
+We've implemented frustum culling to improve performance by only rendering entities that are visible within the camera's field of view:
+
+```typescript
+// Update frustum for culling test
+projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+frustum.setFromProjectionMatrix(projScreenMatrix);
+
+// Perform frustum culling
+const visible = entities.filter(entity => {
+  // Create a bounding sphere for this entity
+  const boundingSphere = new THREE.Sphere(position, radius);
+  
+  // Test if the entity is in view frustum
+  return frustum.intersectsSphere(boundingSphere);
+});
+```
+
+This optimization significantly reduces the rendering load when many entities are off-screen, helping maintain a high and stable frame rate.
+
+### 2. Performance Metrics Visualization
+
+We've added a comprehensive performance monitoring system:
+
+```typescript
+// PerformanceMetrics component
+const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ 
+  fps, 
+  className = '',
+  expanded = false
+}) => {
+  const entities = useAppSelector(selectAllEntities);
+  const [memoryUsage, setMemoryUsage] = useState<number | null>(null);
+  // ...
+  
+  // Calculate entity stats by type and movement status
+  const entityStats = useMemo(() => {
+    const stats = {
+      total: entities.length,
+      drone: 0,
+      vehicle: 0,
+      stationary: 0,
+      // ...
+    };
+    // ...
+  }, [entities]);
+  
+  // Get memory usage if available (Chrome only)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 
+        'performance' in window && 
+        'memory' in (window.performance as any)) {
+      // ...
+    }
+  }, []);
+  
+  return (
+    <ClientOnly>
+      <div className={`bg-gray-900 rounded-md p-2 text-sm ${className}`}>
+        {/* Performance statistics display */}
+      </div>
+    </ClientOnly>
+  );
+};
+```
+
+This component provides real-time visualization of:
+- FPS with color-coding based on performance thresholds
+- Entity counts by type and movement status
+- Memory usage tracking (where browser API supports it)
+
+### 3. Consolidated Three.js Compatibility Module
+
+We've consolidated multiple compatibility approaches into a single solution:
+
+```typescript
+// lib/three/troika-compat-patch.ts
+/**
+ * Consolidated compatibility module for Three.js and Troika
+ * 
+ * This file provides all necessary constants, classes, and patches
+ * to ensure compatibility between Three.js, React Three Fiber, and Troika.
+ * 
+ * It consolidates multiple compatibility files into a single source of truth.
+ */
+
+// Re-export everything from Three.js
+export * from 'three';
+
+// Add compatibility constants for LinearEncoding, sRGBEncoding, and NoToneMapping
+export const LinearEncoding = 3000;
+export const sRGBEncoding = 3001;
+export const NoToneMapping = 0;
+
+// Apply patches at application initialization
+export function applyThreeCompatibilityPatches() {
+  if (typeof window !== 'undefined') {
+    (window as any).THREE = {
+      ...THREE,
+      LinearEncoding,
+      sRGBEncoding,
+      NoToneMapping,
+    };
+  }
+  return true;
+}
+```
+
+This module provides:
+- A single source of truth for Three.js compatibility
+- Comprehensive constant exports for various libraries
+- Browser-safe initialization for SSR compatibility
+- Explicit type definitions for better TypeScript support 

@@ -29,6 +29,13 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
   // Create dummy for matrix calculations
   const dummy = useMemo(() => new THREE.Object3D(), []);
   
+  // Create frustum for culling check
+  const frustum = useMemo(() => new THREE.Frustum(), []);
+  const projScreenMatrix = useMemo(() => new THREE.Matrix4(), []);
+  
+  // Track which entities are visible in the current frame
+  const [visibleEntities, setVisibleEntities] = useState<Entity[]>([]);
+  
   // Determine the appropriate geometry based on entity type and LOD level
   const geometry = useMemo(() => {
     // High detail geometries (LOD 0)
@@ -73,25 +80,58 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
   }, [entityType, currentLOD]);
 
   // Check camera distance to the center of the scene to update LOD level
+  // and perform frustum culling to identify visible entities
   useFrame(() => {
-    if (entities.length > 0) {
-      // Calculate average position of entities as a reference point
-      const centerEntity = entities[0];
-      const distance = camera.position.distanceTo(new THREE.Vector3(
-        centerEntity.position.x,
-        centerEntity.position.y,
-        centerEntity.position.z
-      ));
-      
-      // Update LOD based on distance
-      if (distance > 5000 && currentLOD !== 2) {
-        setCurrentLOD(2); // Low detail
-      } else if (distance > 1000 && distance <= 5000 && currentLOD !== 1) {
-        setCurrentLOD(1); // Medium detail
-      } else if (distance <= 1000 && currentLOD !== 0) {
-        setCurrentLOD(0); // High detail
-      }
+    if (!isBrowser || entities.length === 0) return;
+    
+    // Update frustum for culling test
+    projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(projScreenMatrix);
+    
+    // Calculate average position of entities as a reference point
+    const centerEntity = entities[0];
+    const distance = camera.position.distanceTo(new THREE.Vector3(
+      centerEntity.position.x,
+      centerEntity.position.y,
+      centerEntity.position.z
+    ));
+    
+    // Update LOD based on distance
+    if (distance > 5000 && currentLOD !== 2) {
+      setCurrentLOD(2); // Low detail
+    } else if (distance > 1000 && distance <= 5000 && currentLOD !== 1) {
+      setCurrentLOD(1); // Medium detail
+    } else if (distance <= 1000 && currentLOD !== 0) {
+      setCurrentLOD(0); // High detail
     }
+    
+    // Perform frustum culling
+    const visible = entities.filter(entity => {
+      // Create a bounding sphere for this entity
+      // Add a small radius based on entity type
+      let radius = 1.0; // Default radius
+      if (entityType === EntityType.DRONE) radius = 1.5;
+      if (entityType === EntityType.VEHICLE) radius = 2.0;
+      
+      // Always include selected entity regardless of visibility
+      if (entity.id === selectedEntityId) return true;
+      
+      // Get entity position
+      const position = new THREE.Vector3(
+        entity.position.x,
+        entity.position.y,
+        entity.position.z
+      );
+      
+      // Create a sphere for intersection test
+      const boundingSphere = new THREE.Sphere(position, radius);
+      
+      // Test if the entity is in view frustum
+      return frustum.intersectsSphere(boundingSphere);
+    });
+    
+    // Update visible entities state
+    setVisibleEntities(visible);
   });
 
   // Create appropriate material with optimization based on LOD level
@@ -123,15 +163,15 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
   // Update instances on each frame
   useFrame(() => {
     // Skip in SSR
-    if (!isBrowser || !meshRef.current || !entities.length) return;
+    if (!isBrowser || !meshRef.current || !visibleEntities.length) return;
 
     // Make sure we have a valid instance count
-    if (meshRef.current.count !== entities.length) {
-      meshRef.current.count = entities.length;
+    if (meshRef.current.count !== visibleEntities.length) {
+      meshRef.current.count = visibleEntities.length;
     }
     
     // Update each entity's position and rotation
-    entities.forEach((entity, i) => {
+    visibleEntities.forEach((entity, i) => {
       if (!entity || !entity.position || !meshRef.current) return;
       
       // Position the entity
@@ -176,7 +216,7 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
         material={material}
         ref={meshRef}
       >
-        {entities
+        {visibleEntities
           .filter(entity => entity.id !== selectedEntityId)
           .map((entity) => (
             <EntityInstance 
@@ -189,7 +229,7 @@ export const EntityRenderer: React.FC<EntityRendererProps> = ({ entities, entity
       </Instances>
 
       {/* Selected entity with highlight effect */}
-      {entities.filter(entity => entity.id === selectedEntityId).map(entity => (
+      {visibleEntities.filter(entity => entity.id === selectedEntityId).map(entity => (
         <SelectedEntityHighlight 
           key={`selected-${entity.id}`} 
           entity={entity} 

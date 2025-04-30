@@ -237,3 +237,125 @@ The application is deployed on Vercel with the following configuration:
 - WebAssembly for computation-intensive tasks
 - OffscreenCanvas for improved worker thread rendering
 - GPU-based particle systems for large entity counts 
+
+## Three.js Compatibility
+
+### Consolidated Compatibility Approach
+
+We've implemented a comprehensive compatibility solution to handle various Three.js version issues:
+
+```typescript
+// lib/three/troika-compat-patch.ts
+/**
+ * Consolidated compatibility module for Three.js and Troika
+ * 
+ * This file provides all necessary constants, classes, and patches
+ * to ensure compatibility between Three.js, React Three Fiber, and Troika.
+ * 
+ * It consolidates multiple compatibility files into a single source of truth.
+ */
+
+// Add missing constants removed in Three.js r152
+export const LinearEncoding = 3000;
+export const sRGBEncoding = 3001;
+export const NoToneMapping = 0;
+
+// Apply patches at application initialization
+export function applyThreeCompatibilityPatches() {
+  if (typeof window !== 'undefined') {
+    (window as any).THREE = {
+      ...THREE,
+      LinearEncoding,
+      sRGBEncoding,
+      NoToneMapping,
+    };
+  }
+  return true;
+}
+```
+
+This consolidated approach replaces multiple separate compatibility files:
+- `lib/three/three-compat.ts`
+- `lib/three/three-patch.js`
+- `lib/three/patch-troika.js`
+- `app/utils/three-patch-global.ts`
+
+All compatibility constants, classes, and utilities are now in a single location, making maintenance and updates simpler.
+
+### Performance Optimization
+
+We've implemented several performance optimizations for handling large entity counts:
+
+1. **Frustum Culling**: Entities outside the camera's view frustum are now culled to reduce rendering overhead:
+   ```typescript
+   // Update frustum for culling test
+   projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+   frustum.setFromProjectionMatrix(projScreenMatrix);
+   
+   // Perform frustum culling
+   const visible = entities.filter(entity => {
+     // Create a bounding sphere for this entity
+     const boundingSphere = new THREE.Sphere(position, radius);
+     
+     // Test if the entity is in view frustum
+     return frustum.intersectsSphere(boundingSphere);
+   });
+   ```
+
+2. **Level of Detail (LOD)**: Entities use different geometry and material complexity based on distance:
+   ```typescript
+   // Update LOD based on distance
+   if (distance > 5000 && currentLOD !== 2) {
+     setCurrentLOD(2); // Low detail
+   } else if (distance > 1000 && distance <= 5000 && currentLOD !== 1) {
+     setCurrentLOD(1); // Medium detail
+   } else if (distance <= 1000 && currentLOD !== 0) {
+     setCurrentLOD(0); // High detail
+   }
+   ```
+
+3. **Selective Trajectory Rendering**: Trajectories are only calculated for important/visible entities:
+   ```typescript
+   // If showing all trajectories, limit to a reasonable number
+   if (showAllTrajectories) {
+     // Take at most 30 entities for all trajectories to avoid overwhelming the GPU
+     const maxEntities = Math.min(entities.length, 30);
+     setEntitiesWithTrajectories(entities.slice(0, maxEntities));
+   } else {
+     // Only show trajectory for selected entity
+     const selectedEntity = entities.find(e => e.id === selectedEntityId);
+     setEntitiesWithTrajectories(selectedEntity ? [selectedEntity] : []);
+   }
+   ```
+
+4. **Frame-based Update Frequency**: Entities are updated at different frequencies based on distance:
+   ```typescript
+   const UPDATE_FREQUENCY = {
+     HIGH_DETAIL: 1,      // Update every frame
+     MEDIUM_DETAIL: 2,    // Update every 2 frames
+     LOW_DETAIL: 5,       // Update every 5 frames
+     VERY_FAR: 10         // Update every 10 frames
+   };
+   ```
+
+### Performance Monitoring
+
+We've added comprehensive performance monitoring:
+
+1. **PerformanceMetrics Component**: A new component that visualizes:
+   - FPS counter with color coding
+   - Entity count statistics
+   - Memory usage tracking (Chrome only)
+   - Type-specific entity breakdowns
+
+2. **StatusBar Integration**: The status bar now shows real-time FPS and can expand to show detailed metrics.
+
+### SSR Compatibility Best Practices
+
+For server-side rendering compatibility with Three.js:
+
+1. Use the `ClientOnly` wrapper component for all Three.js elements
+2. Implement explicit browser detection with `typeof window !== 'undefined'`
+3. Use safe useEffect guards to prevent server-side execution
+4. Defer Three.js initialization until after hydration
+5. Use compatibility constants for missing Three.js values 

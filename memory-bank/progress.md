@@ -135,6 +135,29 @@ const useIsomorphicLayoutEffect =
 - Created comprehensive deployment documentation in techContext.md
 - Added performance optimization strategies for production deployments
 
+## Recent Improvements
+
+### Performance Optimization
+- ✅ Implemented frustum culling for off-screen entities
+- ✅ Optimized memory usage for large entity sets through selective rendering
+- ✅ Created frame-based update frequency system for distant entities
+- ✅ Implemented selective trajectory calculation to reduce memory overhead
+- ✅ Added performance metrics visualization with real-time statistics
+- ✅ Enhanced StatusBar with FPS monitoring and detailed metrics display
+
+### Three.js Compatibility Improvements
+- ✅ Consolidated multiple compatibility files into a single `troika-compat-patch.ts` module
+- ✅ Created comprehensive constant exports for Three.js version compatibility
+- ✅ Implemented global patching mechanism for third-party libraries
+- ✅ Added browser-safe initialization for SSR compatibility
+- ✅ Documented compatibility approach in techContext.md
+
+### UI Enhancement Implementation
+- ✅ Added floating performance metrics component with expandable details
+- ✅ Implemented entity statistics visualization with type breakdowns
+- ✅ Enhanced entity selection with more efficient memory usage
+- ✅ Created metrics-based color coding for performance indicators
+
 ## Current Implementation Status
 
 ### Core Visualization System

@@ -14,44 +14,8 @@ import Panel from './shared/layout/Panel';
 import EntityTree from './shared/layout/EntityTree';
 import EntityWorld from './visualization/EntityWorld';
 import EntityDetails from './shared/EntityDetails';
-
-// Inline StatusBar component to fix import issues
-const StatusBar = () => {
-  const [latency, setLatency] = useState<number>(0);
-  const [connectionStatus] = useState<'connected' | 'disconnected'>('connected');
-  
-  // Simulate random latency
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLatency(Math.random() * 20 + 5);
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="flex items-center space-x-4">
-      <div className="flex items-center">
-        <div 
-          className={`w-2 h-2 rounded-full mr-2 ${
-            connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
-          }`} 
-        />
-        <span className="text-sm">
-          {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-        </span>
-      </div>
-      <div className="text-sm">
-        Latency: {latency.toFixed(1)}ms
-      </div>
-      <ClientOnly>
-        <div className="text-sm">
-          Time: {new Date().toLocaleTimeString()}
-        </div>
-      </ClientOnly>
-    </div>
-  );
-};
+import StatusBar from './shared/StatusBar';
+import PerformanceMetrics from './shared/PerformanceMetrics';
 
 export default function Dashboard() {
   const entities = useAppSelector(selectAllEntities);
@@ -158,6 +122,13 @@ export default function Dashboard() {
               }>
                 <EntityWorld onFpsChange={setFps} />
               </ClientOnly>
+              
+              {/* Floating Performance Metrics */}
+              <div className="absolute top-4 right-4 z-10">
+                <ClientOnly>
+                  <PerformanceMetrics fps={fps} />
+                </ClientOnly>
+              </div>
             </div>
             
             {/* Bottom area for timeline/stats - slimmer design */}
@@ -213,7 +184,7 @@ export default function Dashboard() {
       
       {/* Footer */}
       <footer className="flex items-center justify-between px-6 border-t border-gray-800 text-sm text-gray-400">
-        <StatusBar />
+        <StatusBar fps={fps} />
         <div>Real-time Multi-Entity Dashboard Demo</div>
       </footer>
     </div>
@@ -248,10 +219,6 @@ const TrajectoryControls: React.FC = () => {
         >
           Clear Paths
         </button>
-
-        <div className="text-xs text-gray-400 ml-2">
-          Press <span className="px-1 bg-gray-700 rounded">T</span> to toggle all paths
-        </div>
       </div>
     </div>
   );
