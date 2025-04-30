@@ -286,15 +286,90 @@ All compatibility constants, classes, and utilities are now in a single location
 
 To address production build issues where Three.js objects are accessed before they're fully initialized ("Cannot access 'o', 'l', 'C' before initialization" errors), we've implemented a robust pattern:
 
-1. **Safe Object Creation Pattern**
+1. **Proper Inheritance Hierarchy Implementation**
 ```typescript
-// Safe pattern for creating Three.js objects
+// First define EventDispatcher for inheritance
+if (!(window as any).THREE.EventDispatcher) {
+  (window as any).THREE.EventDispatcher = function() {};
+  (window as any).THREE.EventDispatcher.prototype = {
+    constructor: (window as any).THREE.EventDispatcher,
+    addEventListener: function() { return this; },
+    hasEventListener: function() { return false; },
+    removeEventListener: function() { return this; },
+    dispatchEvent: function() { return this; }
+  };
+}
+
+// Create Object3D with proper inheritance
+(window as any).THREE.Object3D = function() {
+  // Properties initialization
+  // ...
+};
+
+// Inherit from EventDispatcher
+(window as any).THREE.Object3D.prototype = Object.create((window as any).THREE.EventDispatcher.prototype);
+(window as any).THREE.Object3D.prototype.constructor = (window as any).THREE.Object3D;
+
+// Group inherits from Object3D
+(window as any).THREE.Group.prototype = Object.create((window as any).THREE.Object3D.prototype);
+(window as any).THREE.Group.prototype.constructor = (window as any).THREE.Group;
+```
+
+2. **Comprehensive Object3D Implementation**
+```typescript
+// CRITICAL: Object3D stub implementation
+constants.Object3D = function() {
+  this.isObject3D = true;
+  this.id = Math.floor(Math.random() * 100000);
+  this.uuid = constants.MathUtils.generateUUID();
+  this.name = '';
+  this.type = 'Object3D';
+  this.parent = null;
+  this.children = [];
+  this.up = { x: 0, y: 1, z: 0, isVector3: true };
+  this.position = { x: 0, y: 0, z: 0, isVector3: true };
+  this.rotation = { x: 0, y: 0, z: 0, order: 'XYZ', isEuler: true };
+  this.quaternion = { x: 0, y: 0, z: 0, w: 1, isQuaternion: true };
+  this.scale = { x: 1, y: 1, z: 1, isVector3: true };
+  this.modelViewMatrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+  this.normalMatrix = { elements: [1,0,0, 0,1,0, 0,0,1], isMatrix3: true };
+  this.matrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+  this.matrixWorld = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+  this.matrixAutoUpdate = true;
+  this.matrixWorldNeedsUpdate = false;
+  this.layers = { mask: 1 };
+  this.visible = true;
+  this.castShadow = false;
+  this.receiveShadow = false;
+  this.frustumCulled = true;
+  this.renderOrder = 0;
+  this.userData = {};
+  this.listeners = {};
+  
+  // Apply EventDispatcher properties
+  constants.EventDispatcher.call(this);
+  
+  // Method implementations for add, remove, traverse, etc.
+  this.add = function(object) { 
+    // Full implementation with proper child/parent handling
+    // ...
+  };
+  this.remove = function(object) {
+    // Full implementation with proper child/parent handling
+    // ...
+  };
+  // Additional methods...
+};
+```
+
+3. **Safe Component Creation Utilities**
+```typescript
+// Safe Vector3 creation helper function to prevent initialization errors
 const safeVector3 = (x: number, y: number, z: number): any => {
   try {
-    // Type assertion prevents direct property access on THREE
     return new (THREE as any).Vector3(x || 0, y || 0, z || 0);
   } catch (e) {
-    // Fallback implementation if THREE.Vector3 isn't available
+    // Fallback if THREE.Vector3 is not available
     return {
       x: x || 0,
       y: y || 0,
@@ -304,13 +379,37 @@ const safeVector3 = (x: number, y: number, z: number): any => {
         this.x = v.x; this.y = v.y; this.z = v.z; 
         return this; 
       },
-      // Additional necessary methods
+      equals: function(v: any) {
+        return this.x === v.x && this.y === v.y && this.z === v.z;
+      },
+      // Additional methods...
     };
   }
 };
 ```
 
-2. **Helper Function Enhancement**
+4. **MathUtils Implementation to Prevent Circular References**
+```typescript
+// Create MathUtils helper for UUID generation
+const MathUtils = {
+  generateUUID: function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  },
+  clamp: function(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, value));
+  },
+  lerp: function(x: number, y: number, t: number) {
+    return (1 - t) * x + t * y;
+  },
+  DEG2RAD: Math.PI / 180,
+  RAD2DEG: 180 / Math.PI
+};
+```
+
+5. **Enhanced Helper Functions**
 ```typescript
 // Enhanced helper function with error handling
 export function positionToVector3(position: Position): any {
@@ -337,7 +436,7 @@ export function positionToVector3(position: Position): any {
 }
 ```
 
-3. **Safe Constants Access**
+6. **Safe Constants Access**
 ```typescript
 // Safe constant access function
 const getBackSide = (): any => {
@@ -349,22 +448,7 @@ const getBackSide = (): any => {
 };
 ```
 
-4. **Pre-initialization Mechanism**
-```typescript
-// In layout.tsx and initialize.ts - Define critical objects
-constants.Object3D = function() {
-  this.isObject3D = true;
-  this.id = Math.floor(Math.random() * 100000);
-  // Comprehensive properties initialization
-  
-  // Method implementations
-  this.add = function() { return this; };
-  this.remove = function() { return this; };
-  // Other required methods
-};
-```
-
-This comprehensive approach ensures Three.js objects are properly initialized and accessible in all environments, including production builds with different code optimization strategies.
+This comprehensive approach ensures Three.js objects and their prototype chains are properly established before they're accessed during initialization, preventing the "Cannot access 'o', 'l', 'C' before initialization" errors in production builds. By creating the complete inheritance hierarchy early in the initialization process, we ensure all required classes and their relationships are properly defined at the right time.
 
 ### Performance Optimization
 

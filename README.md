@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard
+
+A real-time 3D visualization dashboard for tracking and displaying entities (drones, vehicles, stationary objects) in a three-dimensional environment.
+
+## Features
+
+- Real-time tracking and visualization of moving entities
+- 3D environment rendering using Three.js
+- Entity trajectory visualization
+- Animated entity movement
+- Responsive layout with shared components
+
+## Tech Stack
+
+- **Framework**: Next.js
+- **3D Rendering**: Three.js
+- **State Management**: Custom state management in `/lib/state`
+- **Real-time Updates**: WebSocket integration in `/lib/websocket`
+- **Background Processing**: Web Workers in `/lib/workers`
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js (LTS version recommended)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd dashboard
+```
+
+2. Install dependencies
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Run the development server
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+# or
+yarn build
+```
 
-## Learn More
+## Three.js Implementation Notes
 
-To learn more about Next.js, take a look at the following resources:
+The application implements several safety patterns to prevent "Cannot access before initialization" errors in production:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Safe wrapper functions for Three.js objects (Vector3, Vector2, Euler)
+- Comprehensive Object3D stub implementation
+- Proper inheritance hierarchy (EventDispatcher → Object3D → Group/Scene)
+- MathUtils helper to generate UUIDs and prevent circular references
+- Try/catch blocks with functional fallbacks across all components
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+- `/app` - Next.js application components and pages
+  - `/components` - Shared components
+    - `/shared` - Layout and common UI components
+    - `/visualization` - 3D visualization components
+  - `/utils` - Utility functions
+- `/lib` - Core libraries
+  - `/state` - State management
+  - `/three` - Three.js implementation and initialization
+  - `/websocket` - WebSocket communication
+  - `/workers` - Web Worker implementations
+- `/public` - Static assets
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Memory Bank
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project utilizes a structured Memory Bank system that maintains context across development sessions through specialized files:
+
+- `projectbrief.md` - Core requirements and goals
+- `productContext.md` - Why this project exists and problems it solves
+- `activeContext.md` - Current work focus and next steps
+- `systemPatterns.md` - System architecture and design patterns
+- `techContext.md` - Technologies used and technical constraints
+- `progress.md` - Current status and known issues
+
+## License
+
+[Your license information here]
