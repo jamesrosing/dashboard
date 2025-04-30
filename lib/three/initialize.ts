@@ -5,11 +5,41 @@
  * to ensure compatibility constants are properly defined.
  */
 
+// Create MathUtils helper for UUID generation and other functions
+const MathUtils = {
+  generateUUID: function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  },
+  clamp: function(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, value));
+  },
+  lerp: function(x: number, y: number, t: number) {
+    return (1 - t) * x + t * y;
+  },
+  DEG2RAD: Math.PI / 180,
+  RAD2DEG: 180 / Math.PI
+};
+
 // Immediately define critical constants to prevent "Cannot access before initialization" errors
 if (typeof window !== 'undefined') {
   // Define THREE global if it doesn't exist
   if (!(window as any).THREE) {
     (window as any).THREE = {};
+  }
+  
+  // First define EventDispatcher for inheritance
+  if (!(window as any).THREE.EventDispatcher) {
+    (window as any).THREE.EventDispatcher = function() {};
+    (window as any).THREE.EventDispatcher.prototype = {
+      constructor: (window as any).THREE.EventDispatcher,
+      addEventListener: function() { return this; },
+      hasEventListener: function() { return false; },
+      removeEventListener: function() { return this; },
+      dispatchEvent: function() { return this; }
+    };
   }
   
   // Directly assign primitive values to THREE globals
@@ -60,42 +90,186 @@ if (typeof window !== 'undefined') {
     // Event types
     ObjectAddedEvent: 'added',
     ObjectRemovedEvent: 'removed',
+    
+    // Add MathUtils
+    MathUtils: MathUtils
   });
 
   // Define critical Object3D class
   if (!(window as any).THREE.Object3D) {
+    // CRITICAL: Object3D stub implementation
     (window as any).THREE.Object3D = function() {
       this.isObject3D = true;
       this.id = Math.floor(Math.random() * 100000);
-      this.uuid = '';
+      this.uuid = MathUtils.generateUUID();
       this.name = '';
       this.type = 'Object3D';
       this.parent = null;
       this.children = [];
-      this.up = { x: 0, y: 1, z: 0 };
-      this.position = { x: 0, y: 0, z: 0 };
-      this.rotation = { x: 0, y: 0, z: 0, order: 'XYZ' };
-      this.quaternion = { x: 0, y: 0, z: 0, w: 1 };
-      this.scale = { x: 1, y: 1, z: 1 };
-      this.modelViewMatrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] };
-      this.normalMatrix = { elements: [1,0,0, 0,1,0, 0,0,1] };
-      this.matrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] };
-      this.matrixWorld = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] };
+      this.up = { x: 0, y: 1, z: 0, isVector3: true };
+      this.position = { x: 0, y: 0, z: 0, isVector3: true };
+      this.rotation = { x: 0, y: 0, z: 0, order: 'XYZ', isEuler: true };
+      this.quaternion = { x: 0, y: 0, z: 0, w: 1, isQuaternion: true };
+      this.scale = { x: 1, y: 1, z: 1, isVector3: true };
+      this.modelViewMatrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+      this.normalMatrix = { elements: [1,0,0, 0,1,0, 0,0,1], isMatrix3: true };
+      this.matrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+      this.matrixWorld = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
       this.matrixAutoUpdate = true;
       this.matrixWorldNeedsUpdate = false;
       this.layers = { mask: 1 };
       this.visible = true;
+      this.castShadow = false;
+      this.receiveShadow = false;
+      this.frustumCulled = true;
+      this.renderOrder = 0;
       this.userData = {};
-        
+      this.listeners = {};
+      
+      // Apply EventDispatcher properties - this is critical
+      (window as any).THREE.EventDispatcher.call(this);
+      
       // Basic methods
-      this.add = function() { return this; };
-      this.remove = function() { return this; };
-      this.updateMatrix = function() {};
-      this.updateMatrixWorld = function() {};
-      this.applyMatrix4 = function() {};
-      this.setRotationFromEuler = function() {};
-      this.traverse = function() {};
+      this.add = function(object: any) { 
+        if (arguments.length > 1) {
+          for (let i = 0; i < arguments.length; i++) {
+            this.add(arguments[i]);
+          }
+          return this;
+        }
+        
+        if (object === this) return this;
+        
+        if (object && object.isObject3D) {
+          if (object.parent !== null) {
+            object.parent.remove(object);
+          }
+          
+          object.parent = this;
+          this.children.push(object);
+        }
+        
+        return this;
+      };
+      
+      this.remove = function(object: any) {
+        if (arguments.length > 1) {
+          for (let i = 0; i < arguments.length; i++) {
+            this.remove(arguments[i]);
+          }
+          return this;
+        }
+        
+        const index = this.children.indexOf(object);
+        
+        if (index !== -1) {
+          object.parent = null;
+          this.children.splice(index, 1);
+        }
+        
+        return this;
+      };
+      
+      this.clear = function() {
+        for (let i = 0; i < this.children.length; i++) {
+          const object = this.children[i];
+          object.parent = null;
+        }
+        
+        this.children.length = 0;
+        
+        return this;
+      };
+      
+      this.updateMatrix = function() {
+        // Stub implementation
+        return this;
+      };
+      
+      this.updateMatrixWorld = function() {
+        // Stub implementation
+        return this;
+      };
+      
+      this.updateWorldMatrix = function() {
+        // Stub implementation
+        return this;
+      };
+      
+      this.applyMatrix4 = function() {
+        // Stub implementation
+        return this;
+      };
+      
+      this.setRotationFromEuler = function() {
+        // Stub implementation
+        return this;
+      };
+      
+      this.traverse = function(callback: (obj: any) => void) {
+        callback(this);
+        
+        const children = this.children;
+        
+        for (let i = 0, l = children.length; i < l; i++) {
+          children[i].traverse(callback);
+        }
+      };
+      
+      this.getObjectById = function(id: number) {
+        if (this.id === id) return this;
+        
+        const children = this.children;
+        
+        for (let i = 0, l = children.length; i < l; i++) {
+          const object = children[i].getObjectById(id);
+          
+          if (object !== undefined) {
+            return object;
+          }
+        }
+        
+        return undefined;
+      };
+      
+      this.getObjectByName = function(name: string) {
+        if (this.name === name) return this;
+        
+        const children = this.children;
+        
+        for (let i = 0, l = children.length; i < l; i++) {
+          const object = children[i].getObjectByName(name);
+          
+          if (object !== undefined) {
+            return object;
+          }
+        }
+        
+        return undefined;
+      };
+      
+      this.getWorldPosition = function(target: any) {
+        if (!target) {
+          target = { x: 0, y: 0, z: 0, isVector3: true };
+        }
+        
+        // For the stub, we just copy the object's position
+        target.x = this.position.x;
+        target.y = this.position.y;
+        target.z = this.position.z;
+        
+        return target;
+      };
+      
+      this.lookAt = function() {
+        // Stub implementation
+        return this;
+      };
     };
+    
+    // Inherit from EventDispatcher
+    (window as any).THREE.Object3D.prototype = Object.create((window as any).THREE.EventDispatcher.prototype);
+    (window as any).THREE.Object3D.prototype.constructor = (window as any).THREE.Object3D;
   }
   
   // Vector3 class stub
@@ -126,6 +300,21 @@ if (typeof window !== 'undefined') {
         this.y += v.y;
         this.z += v.z;
         return this;
+      };
+      
+      this.subVectors = function(a: any, b: any) {
+        this.x = a.x - b.x;
+        this.y = a.y - b.y;
+        this.z = a.z - b.z;
+        return this;
+      };
+      
+      this.length = function() {
+        return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+      };
+      
+      this.equals = function(v: any) {
+        return ((v.x === this.x) && (v.y === this.y) && (v.z === this.z));
       };
     };
   }
@@ -177,6 +366,12 @@ if (typeof window !== 'undefined') {
       };
       this.copy = function() { return this; };
       this.multiplyMatrices = function() { return this; };
+      this.multiplyScalar = function() { return this; };
+      
+      this.makeRotationFromEuler = function() { return this; };
+      this.makeRotationFromQuaternion = function() { return this; };
+      this.makeScale = function() { return this; };
+      this.makeTranslation = function() { return this; };
     };
   }
   
@@ -187,6 +382,10 @@ if (typeof window !== 'undefined') {
       this.type = 'Group';
       this.isGroup = true;
     };
+    
+    // Inherit from Object3D
+    (window as any).THREE.Group.prototype = Object.create((window as any).THREE.Object3D.prototype);
+    (window as any).THREE.Group.prototype.constructor = (window as any).THREE.Group;
   }
   
   // Frustum class stub
@@ -218,6 +417,22 @@ if (typeof window !== 'undefined') {
         return this; 
       };
     };
+  }
+
+  // Scene class stub - extends Object3D
+  if (!(window as any).THREE.Scene) {
+    (window as any).THREE.Scene = function() {
+      (window as any).THREE.Object3D.call(this);
+      this.type = 'Scene';
+      this.isScene = true;
+      this.background = null;
+      this.environment = null;
+      this.fog = null;
+    };
+    
+    // Inherit from Object3D
+    (window as any).THREE.Scene.prototype = Object.create((window as any).THREE.Object3D.prototype);
+    (window as any).THREE.Scene.prototype.constructor = (window as any).THREE.Scene;
   }
 
   console.log('Critical Three.js constants and objects pre-initialized');

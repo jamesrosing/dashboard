@@ -58,41 +58,226 @@ export default function RootLayout({
                 ObjectAddedEvent: 'added',
                 ObjectRemovedEvent: 'removed',
               };
+
+              // Create base helper utility to prevent circular references in production build
+              constants.MathUtils = {
+                generateUUID: function() {
+                  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                  });
+                },
+                clamp: function(value, min, max) {
+                  return Math.max(min, Math.min(max, value));
+                },
+                lerp: function(x, y, t) {
+                  return (1 - t) * x + t * y;
+                },
+                DEG2RAD: Math.PI / 180,
+                RAD2DEG: 180 / Math.PI
+              };
+              
+              // EventDispatcher stub implementation - critical for Object3D
+              constants.EventDispatcher = function() {};
+              constants.EventDispatcher.prototype = {
+                constructor: constants.EventDispatcher,
+                addEventListener: function() { return this; },
+                hasEventListener: function() { return false; },
+                removeEventListener: function() { return this; },
+                dispatchEvent: function() { return this; }
+              };
               
               // CRITICAL: Object3D stub implementation
               // This is essential as it's being accessed before initialization
               constants.Object3D = function() {
                 this.isObject3D = true;
                 this.id = Math.floor(Math.random() * 100000);
-                this.uuid = '';
+                this.uuid = constants.MathUtils.generateUUID();
                 this.name = '';
                 this.type = 'Object3D';
                 this.parent = null;
                 this.children = [];
-                this.up = { x: 0, y: 1, z: 0 };
-                this.position = { x: 0, y: 0, z: 0 };
-                this.rotation = { x: 0, y: 0, z: 0, order: 'XYZ' };
-                this.quaternion = { x: 0, y: 0, z: 0, w: 1 };
-                this.scale = { x: 1, y: 1, z: 1 };
-                this.modelViewMatrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] };
-                this.normalMatrix = { elements: [1,0,0, 0,1,0, 0,0,1] };
-                this.matrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] };
-                this.matrixWorld = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] };
+                this.up = { x: 0, y: 1, z: 0, isVector3: true };
+                this.position = { x: 0, y: 0, z: 0, isVector3: true };
+                this.rotation = { x: 0, y: 0, z: 0, order: 'XYZ', isEuler: true };
+                this.quaternion = { x: 0, y: 0, z: 0, w: 1, isQuaternion: true };
+                this.scale = { x: 1, y: 1, z: 1, isVector3: true };
+                this.modelViewMatrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+                this.normalMatrix = { elements: [1,0,0, 0,1,0, 0,0,1], isMatrix3: true };
+                this.matrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
+                this.matrixWorld = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
                 this.matrixAutoUpdate = true;
                 this.matrixWorldNeedsUpdate = false;
                 this.layers = { mask: 1 };
                 this.visible = true;
+                this.castShadow = false;
+                this.receiveShadow = false;
+                this.frustumCulled = true;
+                this.renderOrder = 0;
                 this.userData = {};
+                this.listeners = {};
+                
+                // Apply EventDispatcher properties
+                constants.EventDispatcher.call(this);
                 
                 // Basic methods
-                this.add = function() { return this; };
-                this.remove = function() { return this; };
-                this.updateMatrix = function() {};
-                this.updateMatrixWorld = function() {};
-                this.applyMatrix4 = function() {};
-                this.setRotationFromEuler = function() {};
-                this.traverse = function() {};
+                this.add = function(object) { 
+                  if (arguments.length > 1) {
+                    for (let i = 0; i < arguments.length; i++) {
+                      this.add(arguments[i]);
+                    }
+                    return this;
+                  }
+                  
+                  if (object === this) return this;
+                  
+                  if (object && object.isObject3D) {
+                    if (object.parent !== null) {
+                      object.parent.remove(object);
+                    }
+                    
+                    object.parent = this;
+                    this.children.push(object);
+                  }
+                  
+                  return this;
+                };
+                
+                this.remove = function(object) {
+                  if (arguments.length > 1) {
+                    for (let i = 0; i < arguments.length; i++) {
+                      this.remove(arguments[i]);
+                    }
+                    return this;
+                  }
+                  
+                  const index = this.children.indexOf(object);
+                  
+                  if (index !== -1) {
+                    object.parent = null;
+                    this.children.splice(index, 1);
+                  }
+                  
+                  return this;
+                };
+                
+                this.clear = function() {
+                  for (let i = 0; i < this.children.length; i++) {
+                    const object = this.children[i];
+                    object.parent = null;
+                  }
+                  
+                  this.children.length = 0;
+                  
+                  return this;
+                };
+                
+                this.updateMatrix = function() {
+                  // Stub implementation
+                  return this;
+                };
+                
+                this.updateMatrixWorld = function(force) {
+                  // Stub implementation
+                  return this;
+                };
+                
+                this.updateWorldMatrix = function() {
+                  // Stub implementation
+                  return this;
+                };
+                
+                this.applyMatrix4 = function() {
+                  // Stub implementation
+                  return this;
+                };
+                
+                this.setRotationFromEuler = function() {
+                  // Stub implementation
+                  return this;
+                };
+                
+                this.traverse = function(callback) {
+                  callback(this);
+                  
+                  const children = this.children;
+                  
+                  for (let i = 0, l = children.length; i < l; i++) {
+                    children[i].traverse(callback);
+                  }
+                };
+                
+                this.getObjectById = function(id) {
+                  if (this.id === id) return this;
+                  
+                  const children = this.children;
+                  
+                  for (let i = 0, l = children.length; i < l; i++) {
+                    const object = children[i].getObjectById(id);
+                    
+                    if (object !== undefined) {
+                      return object;
+                    }
+                  }
+                  
+                  return undefined;
+                };
+                
+                this.getObjectByName = function(name) {
+                  if (this.name === name) return this;
+                  
+                  const children = this.children;
+                  
+                  for (let i = 0, l = children.length; i < l; i++) {
+                    const object = children[i].getObjectByName(name);
+                    
+                    if (object !== undefined) {
+                      return object;
+                    }
+                  }
+                  
+                  return undefined;
+                };
+                
+                this.getObjectByProperty = function(name, value) {
+                  if (this[name] === value) return this;
+                  
+                  const children = this.children;
+                  
+                  for (let i = 0, l = children.length; i < l; i++) {
+                    const object = children[i].getObjectByProperty(name, value);
+                    
+                    if (object !== undefined) {
+                      return object;
+                    }
+                  }
+                  
+                  return undefined;
+                };
+                
+                this.getWorldPosition = function(target) {
+                  if (!target) {
+                    target = { x: 0, y: 0, z: 0, isVector3: true };
+                  }
+                  
+                  // In a real implementation, this would compute the world position
+                  // For the stub, we just copy the object's position
+                  target.x = this.position.x;
+                  target.y = this.position.y;
+                  target.z = this.position.z;
+                  
+                  return target;
+                };
+                
+                this.lookAt = function() {
+                  // Stub implementation
+                  return this;
+                };
               };
+              
+              // Inherit from EventDispatcher
+              constants.Object3D.prototype = Object.create(constants.EventDispatcher.prototype);
+              constants.Object3D.prototype.constructor = constants.Object3D;
               
               // Vector3 class stub
               constants.Vector3 = function(x, y, z) { 
@@ -193,6 +378,10 @@ export default function RootLayout({
                 this.type = 'Group';
                 this.isGroup = true;
               };
+              
+              // Inherit from Object3D
+              constants.Group.prototype = Object.create(constants.Object3D.prototype);
+              constants.Group.prototype.constructor = constants.Group;
               
               // Frustum class stub
               constants.Frustum = function() {
