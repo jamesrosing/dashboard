@@ -5,7 +5,10 @@
  * It pre-defines all constants and then exports everything from Three.js.
  */
 
-// Primitive constants - defined first before any other imports
+// First import Three.js - we need this for the class/method exports
+import * as THREE from 'three';
+
+// Primitive constants - defined first to avoid initialization timing issues
 // These are directly defined with primitive values to avoid any initialization timing issues
 
 // Type constants
@@ -87,5 +90,99 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Now import and export everything from Three.js
+// Export all Three.js classes and objects that our app needs
+export const { 
+  // Core
+  Object3D,
+  Group,
+  Scene,
+  
+  // Cameras
+  Camera,
+  PerspectiveCamera,
+  OrthographicCamera,
+  
+  // Renderers
+  WebGLRenderer,
+  WebGLRenderTarget,
+  
+  // Geometries
+  BoxGeometry,
+  SphereGeometry,
+  ConeGeometry,
+  CylinderGeometry,
+  TorusGeometry,
+  PlaneGeometry,
+  BufferGeometry,
+  
+  // Materials
+  Material,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  MeshLambertMaterial,
+  MeshPhongMaterial,
+  LineBasicMaterial,
+  ShaderMaterial,
+  
+  // Meshes and primitives
+  Mesh,
+  InstancedMesh,
+  LineSegments,
+  Line,
+  Points,
+  
+  // Math
+  Vector2,
+  Vector3,
+  Vector4,
+  Matrix3,
+  Matrix4,
+  Quaternion,
+  Euler,
+  Color,
+  MathUtils,
+  
+  // Textures
+  Texture,
+  DataTexture,
+  
+  // Loaders
+  TextureLoader,
+  Loader,
+  LoadingManager,
+  FileLoader,
+  
+  // Helpers
+  BufferAttribute,
+  
+  // Animation
+  AnimationMixer,
+  AnimationClip,
+  AnimationAction,
+  
+  // Lights
+  AmbientLight,
+  DirectionalLight,
+  PointLight,
+  SpotLight,
+  
+  // Utilities
+  Raycaster,
+  Frustum,
+  Sphere,
+  Box3,
+  Triangle,
+  Plane,
+  Line3,
+  
+  // Extras
+  Path,
+  LatheGeometry,
+  
+  // Constants
+  REVISION,
+  UniformsLib
+} = THREE;
+
+// Make sure we export everything from Three.js 
 export * from 'three'; 

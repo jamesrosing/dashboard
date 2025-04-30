@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from '../three/three-entry';
 
 /**
  * Entity types supported by the system

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import * as THREE from 'three';
+import * as THREE from '../../../lib/three/three-entry';
 import { useFrame } from '@react-three/fiber';
 import { Entity, positionToVector3 } from '../../../lib/state/entityTypes';
 

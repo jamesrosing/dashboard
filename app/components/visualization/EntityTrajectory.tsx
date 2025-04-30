@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
-import * as THREE from 'three';
+import * as THREE from '../../../lib/three/three-entry';
 import { Entity } from '../../../lib/state/entityTypes';
 
 // Safe check for browser environment

@@ -63,8 +63,8 @@ const nextConfig: NextConfig = {
   },
   // Set experimental features for performance
   experimental: {
-    // These optimizations help with module loading and initialization
-    optimizeCss: true,
+    // Disable optimizeCss since we don't have critters installed
+    optimizeCss: false,
     optimizePackageImports: ['three']
   }
 };
