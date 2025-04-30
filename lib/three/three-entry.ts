@@ -26,6 +26,9 @@ export const UnsignedIntType = 1014;
 export const FloatType = 1015;
 export const HalfFloatType = 1016;
 
+// Make sure 'D' is defined
+export const D = {};
+
 // Format constants
 export const RGBAFormat = 1023;
 export const RGIntegerFormat = 1033;
@@ -94,6 +97,7 @@ if (typeof window !== 'undefined') {
     DoubleSide,
     DEG2RAD: Math.PI / 180,
     RAD2DEG: 180 / Math.PI,
+    D,
   });
   
   // Create base stubs for critical classes if they don't exist

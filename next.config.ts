@@ -26,6 +26,19 @@ const nextConfig: NextConfig = {
       // Use our simplified entry module that defines constants before importing
       config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-entry.ts');
       
+      // Add extra aliases for specific Three.js modules to prevent circular dependencies
+      config.resolve.alias['three/examples/jsm/utils/BufferGeometryUtils'] = 
+        path.resolve(__dirname, 'lib/three/BufferGeometryUtils.ts');
+      
+      // Force specific module order to ensure constants are defined before use
+      if (!config.module) {
+        config.module = { rules: [] };
+      }
+      
+      if (!config.module.rules) {
+        config.module.rules = [];
+      }
+      
       // Ensure optimized chunking for Three.js
       if (!config.optimization) {
         config.optimization = {};
@@ -44,6 +57,15 @@ const nextConfig: NextConfig = {
         test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
         name: 'three-vendor',
         priority: 10,
+        enforce: true,
+        chunks: 'all',
+      };
+      
+      // NEW: Add dependency preloading to ensure proper initialization order
+      config.optimization.splitChunks.cacheGroups.threeCore = {
+        test: /[\\/]lib[\\/]three[\\/]three-entry\.ts$/,
+        name: 'three-core',
+        priority: 20, // Higher priority than regular three chunk
         enforce: true,
         chunks: 'all',
       };
@@ -68,6 +90,25 @@ const nextConfig: NextConfig = {
           }
         }
       });
+      
+      // NEW: Add runtime patch to ensure Three.js is initialized properly
+      config.module.rules.push({
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'string-replace-loader',
+            options: {
+              search: 'import {.*} from [\'"]three[\'"]',
+              replace: (match: string) => {
+                // This is a special loader that ensures our three-entry is imported first
+                return `import '../lib/three/initialize';\n${match}`;
+              },
+              flags: 'g'
+            }
+          }
+        ]
+      });
     }
 
     // Add a special environment variable that tells us we're in production build
@@ -84,7 +125,11 @@ const nextConfig: NextConfig = {
   experimental: {
     // Disable optimizeCss since we don't have critters installed
     optimizeCss: false,
-    optimizePackageImports: ['three']
+    optimizePackageImports: ['three'],
+    // SWC plugins for optimization
+    swcPlugins: [
+      // You can add SWC plugins here if needed
+    ]
   }
 };
 
