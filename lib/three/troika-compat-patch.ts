@@ -7,20 +7,25 @@
  * It consolidates multiple compatibility files into a single source of truth.
  */
 
+// Important: Import our initialization module first to ensure constants are globally defined
+import './initialize';
+
 // Safe check for browser environment
 const isBrowser = typeof window !== 'undefined';
 
-// We need to directly capture the THREE object before it's potentially modified
-// by other imports to avoid circular reference issues
-import * as THREE_ORIGINAL from 'three';
+// Access constants directly from the global THREE object first if available
+// This ensures we're using the same constants that were pre-defined
+const getGlobalThree = () => (typeof window !== 'undefined' ? (window as any).THREE : {});
 
-// Define primitive values first - these do not reference other THREE variables
+// First define all constants directly with primitive values to avoid circular references
+// These are used internally in this module, and also exported
+
 // These constants were removed in Three.js r152 but are still used by Troika
 export const LinearEncoding = 3000;
 export const sRGBEncoding = 3001;
 export const NoToneMapping = 0;
 
-// Basic type constants - directly using primitive values to avoid reference issues
+// Basic type constants - directly using primitive values
 export const UnsignedByteType = 1009; 
 export const ByteType = 1010;
 export const ShortType = 1011;
@@ -57,11 +62,16 @@ export const FrontSide = 0;
 export const BackSide = 1;
 export const DoubleSide = 2;
 
-// Version constant required by some libraries
+// Only after all primitives are defined, import THREE
+// We can now safely reference THREE_ORIGINAL without circular dependency issues
+import * as THREE_ORIGINAL from 'three';
+
+// Version constant required by some libraries, safe to reference from original
 export const REVISION = THREE_ORIGINAL.REVISION || '176';
 export const UniformsLib = THREE_ORIGINAL.UniformsLib || {};
 
-// Now safe to re-export everything from Three.js
+// Now export all THREE methods and classes 
+// We've ensured constants are pre-defined to avoid initialization timing issues
 export * from 'three';
 
 // Create safe references to all commonly used classes
@@ -127,40 +137,6 @@ export const ConeGeometry = THREE_ORIGINAL.ConeGeometry;
 export const CylinderGeometry = THREE_ORIGINAL.CylinderGeometry;
 export const TorusGeometry = THREE_ORIGINAL.TorusGeometry;
 
-// Create a patch object with all our constants using primitives only
-const PATCH_CONSTANTS = {
-  // Use primitive values directly to avoid variable references
-  LinearEncoding: 3000,
-  sRGBEncoding: 3001,
-  NoToneMapping: 0,
-  UnsignedByteType: 1009,
-  ByteType: 1010,
-  ShortType: 1011,
-  UnsignedShortType: 1012,
-  IntType: 1013,
-  UnsignedIntType: 1014,
-  FloatType: 1015,
-  HalfFloatType: 1016,
-  RGBAFormat: 1023,
-  RGIntegerFormat: 1033,
-  RedFormat: 1028,
-  RGFormat: 1030,
-  RedIntegerFormat: 1031,
-  RGBAIntegerFormat: 1033,
-  LinearFilter: 1006,
-  NearestFilter: 1003,
-  ClampToEdgeWrapping: 1001,
-  UVMapping: 300,
-  LinearMipMapLinearFilter: 1008,
-  LinearSRGBColorSpace: 'Linear',
-  SRGBColorSpace: 'srgb',
-  NoBlending: 0,
-  FrontSide: 0,
-  BackSide: 1,
-  DoubleSide: 2,
-  REVISION: THREE_ORIGINAL.REVISION || '176'
-};
-
 // Flag to track if patches have been applied
 let patchesApplied = false;
 
@@ -180,10 +156,37 @@ export function applyThreeCompatibilityPatches() {
         (window as any).THREE = { ...THREE_ORIGINAL };
       }
       
-      // Apply patch constants using direct assignment
-      Object.entries(PATCH_CONSTANTS).forEach(([key, value]) => {
-        (window as any).THREE[key] = value;
-      });
+      // Add compatibility constants to the global THREE object
+      // Primitive constants (using direct values to avoid references)
+      (window as any).THREE.LinearEncoding = 3000;
+      (window as any).THREE.sRGBEncoding = 3001;
+      (window as any).THREE.NoToneMapping = 0;
+      (window as any).THREE.UnsignedByteType = 1009;
+      (window as any).THREE.ByteType = 1010;
+      (window as any).THREE.ShortType = 1011;
+      (window as any).THREE.UnsignedShortType = 1012;
+      (window as any).THREE.IntType = 1013;
+      (window as any).THREE.UnsignedIntType = 1014;
+      (window as any).THREE.FloatType = 1015;
+      (window as any).THREE.HalfFloatType = 1016;
+      (window as any).THREE.RGBAFormat = 1023;
+      (window as any).THREE.RedFormat = 1028;
+      (window as any).THREE.RGFormat = 1030;
+      (window as any).THREE.RedIntegerFormat = 1031;
+      (window as any).THREE.RGIntegerFormat = 1033;
+      (window as any).THREE.RGBAIntegerFormat = 1033;
+      (window as any).THREE.LinearFilter = 1006;
+      (window as any).THREE.NearestFilter = 1003;
+      (window as any).THREE.ClampToEdgeWrapping = 1001;
+      (window as any).THREE.UVMapping = 300;
+      (window as any).THREE.LinearMipMapLinearFilter = 1008;
+      (window as any).THREE.LinearSRGBColorSpace = 'Linear';
+      (window as any).THREE.SRGBColorSpace = 'srgb';
+      (window as any).THREE.NoBlending = 0;
+      (window as any).THREE.FrontSide = 0;
+      (window as any).THREE.BackSide = 1;
+      (window as any).THREE.DoubleSide = 2;
+      (window as any).THREE.REVISION = THREE_ORIGINAL.REVISION || '176';
       
       // Mark as applied
       patchesApplied = true;

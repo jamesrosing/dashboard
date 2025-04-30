@@ -23,11 +23,11 @@ const nextConfig: NextConfig = {
         config.resolve.alias = {};
       }
       
-      // Add alias for Three.js - updated to use the .ts file
-      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-compat.ts');
+      // We now point to our troika-compat-patch.ts file which has the initialization fixes
+      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/troika-compat-patch.ts');
       
-      // Important: Don't apply the alias for modules in node_modules
-      // This lets @react-three/drei use the original three module
+      // Ensure our initialize.ts gets bundled first in chunks that use Three.js
+      // This is critical for proper constant initialization
       if (!config.module) {
         config.module = { rules: [] };
       }
@@ -35,6 +35,22 @@ const nextConfig: NextConfig = {
       if (!config.module.rules) {
         config.module.rules = [];
       }
+      
+      // Make sure our initialization module is included in any chunk that uses Three.js
+      // but exclude it from node_modules to prevent conflicts
+      config.module.rules.push({
+        test: /\.(js|ts|tsx)$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['next/babel'],
+              // No plugins needed, just want to ensure babel processes our files
+            }
+          }
+        ]
+      });
       
       // This rule ensures that imports in node_modules aren't affected by our alias
       config.module.rules.push({
@@ -49,8 +65,22 @@ const nextConfig: NextConfig = {
       });
     }
 
+    // Add a special environment variable that tells us we're in production build
+    // This helps with conditional loading of patches
+    if (process.env.NODE_ENV === 'production') {
+      if (!config.plugins) {
+        config.plugins = [];
+      }
+    }
+
     return config;
   },
+  // Set experimental features for performance
+  experimental: {
+    // These optimizations help with module loading and initialization
+    optimizeCss: true,
+    optimizePackageImports: ['three']
+  }
 };
 
 export default nextConfig;

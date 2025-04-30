@@ -1,7 +1,8 @@
+import '../../../lib/three/initialize';
+import * as THREE from '../../../lib/three/troika-compat-patch';
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
-import * as THREE from 'three';
 import { useAppSelector } from '../../../lib/state/hooks';
 import { selectAllEntities, selectTrajectoryEnabled, selectTrajectorySettings } from '../../../lib/state/entitySlice';
 import { Entity, EntityType } from '../../../lib/state/entityTypes';

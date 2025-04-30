@@ -1,15 +1,19 @@
 import React, { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import ClientOnly from '../shared/ClientOnly';
-// Import the Three.js patching function to ensure it's applied
-import { ensureThreeJsPatched } from '../../../lib/three/initialize';
+// Import the Three.js initialization module first
+import '../../../lib/three/initialize';
+// Then import the compatibility patch
+import { applyThreeCompatibilityPatches } from '../../../lib/three/troika-compat-patch';
 
 // Safe browser detection
 const isBrowser = typeof window !== 'undefined';
 
-// Ensure Three.js patches are applied
+// Apply patches immediately when this module loads
 if (isBrowser) {
-  ensureThreeJsPatched();
+  // Initialize constants and apply compatibility patches
+  applyThreeCompatibilityPatches();
+  console.log('Entity World: Three.js patches applied on module load');
 }
 
 // Dynamically import Three.js components with SSR disabled
@@ -30,10 +34,12 @@ interface EntityWorldProps {
 
 // Main EntityWorld container that sets up the Three.js canvas
 export const EntityWorld: React.FC<EntityWorldProps> = ({ onFpsChange }) => {
-  // Apply patches when component mounts
+  // Apply patches again when component mounts to ensure they're applied
   useEffect(() => {
     if (isBrowser) {
-      ensureThreeJsPatched();
+      // Ensure compatibility patches are applied
+      applyThreeCompatibilityPatches();
+      console.log('Entity World: Three.js patches applied on component mount');
     }
   }, []);
 
