@@ -88,6 +88,11 @@ We have successfully completed the core visualization components and established
   - app/utils/three-patch-global.ts
   - lib/three/three-compat.js
 - Consolidated compatibility approach into a single troika-compat-patch.ts file
+- Removed unused MainLayout.tsx component that was replaced by Dashboard.tsx:
+  - Eliminated multiple TypeScript and linter errors
+  - Simplified project structure
+  - Removed unnecessary module import errors for non-existent components
+  - Consolidated layout implementation to a single approach
 
 ### Hydration Resolution Technical Details
 ```tsx
