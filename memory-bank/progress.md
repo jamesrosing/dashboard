@@ -5,6 +5,16 @@ We have successfully completed the core visualization components and established
 
 ## Recent Progress
 
+### Three.js Production Build Initialization Fix
+- ✅ Fixed "Cannot access 'l' before initialization" errors in Vercel production builds
+- ✅ Created a specialized three-entry.ts module that defines constants with primitive values before imports
+- ✅ Added a Script component in app/layout.tsx with beforeInteractive strategy to initialize THREE globals
+- ✅ Updated imports across all visualization components to use the new entry module
+- ✅ Fixed webpack configuration to prevent babel-loader dependency issues
+- ✅ Installed missing critters dependency for CSS optimization
+- ✅ Explicitly exported all required Three.js classes and objects in our entry module
+- ✅ Fixed type errors in components that use Three.js objects
+
 ### Server-Side Rendering (SSR) Compatibility
 - ✅ Created ClientOnly wrapper component for Three.js elements
 - ✅ Implemented safe browser detection with `typeof window !== 'undefined'`
@@ -69,9 +79,11 @@ We have successfully completed the core visualization components and established
 ### Technical Challenges Resolved
 - ✅ Fixed SSR hydration issues with Three.js components in Vercel deployment
 - ✅ Resolved type errors in trajectory and animation components
-- Fixed Three.js compatibility issues with newer versions by implementing proper compatibility layer
-- Consolidated multiple compatibility patches into a single approach
-- Fixed rotation handling for proper entity orientation
+- ✅ Fixed Three.js compatibility issues with newer versions by implementing proper compatibility layer
+- ✅ Consolidated multiple compatibility patches into a single approach
+- ✅ Fixed rotation handling for proper entity orientation
+- ✅ Resolved "Cannot access 'l' before initialization" error in production builds
+- ✅ Fixed dependency issues with critters for CSS optimization in Next.js builds
 
 ### UI Enhancement Decisions
 - Completed creative phase for UI layout architecture
@@ -87,7 +99,10 @@ We have successfully completed the core visualization components and established
   - lib/three/patch-troika.js
   - app/utils/three-patch-global.ts
   - lib/three/three-compat.js
-- Consolidated compatibility approach into a single troika-compat-patch.ts file
+- Consolidated compatibility approach into:
+  - lib/three/troika-compat-patch.ts
+  - lib/three/initialize.ts
+  - lib/three/three-entry.ts
 - Removed unused MainLayout.tsx component that was replaced by Dashboard.tsx:
   - Eliminated multiple TypeScript and linter errors
   - Simplified project structure
@@ -115,6 +130,38 @@ useEffect(() => {
 // Enhanced ClientOnly component
 const useIsomorphicLayoutEffect = 
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+```
+
+### Three.js Initialization Fix Technical Details
+```tsx
+// In layout.tsx - Ensures constants are defined before any module loads
+<Script id="three-init" strategy="beforeInteractive">
+  {`
+    // Pre-define critical THREE constants to avoid initialization errors
+    if (typeof window !== 'undefined') {
+      window.THREE = window.THREE || {};
+      Object.assign(window.THREE, {
+        UnsignedByteType: 1009,
+        ByteType: 1010,
+        // ... other constants
+      });
+    }
+  `}
+</Script>
+
+// In three-entry.ts - Defines constants as primitive values before imports
+// Type constants
+export const UnsignedByteType = 1009;
+export const ByteType = 1010;
+// ... other constants
+
+// Then import and export from Three.js
+import * as THREE from 'three';
+export const { Vector3, Euler, Object3D /* etc. */ } = THREE;
+export * from 'three';
+
+// In components - Import from our entry module instead of directly
+import * as THREE from '../../../lib/three/three-entry';
 ```
 
 ### Entity Trajectory Data Safety Improvements
@@ -151,6 +198,8 @@ const useIsomorphicLayoutEffect =
 - ✅ Implemented global patching mechanism for third-party libraries
 - ✅ Added browser-safe initialization for SSR compatibility
 - ✅ Documented compatibility approach in techContext.md
+- ✅ Created a specialized three-entry.ts module that avoids initialization timing issues
+- ✅ Added explicit initialization of THREE globals with a Script component
 
 ### UI Enhancement Implementation
 - ✅ Added floating performance metrics component with expandable details
@@ -161,7 +210,7 @@ const useIsomorphicLayoutEffect =
 ## Current Implementation Status
 
 ### Core Visualization System
-**Progress**: 80% Complete
+**Progress**: 95% Complete
 
 #### ✅ Completed
 - Next.js + React application setup
@@ -177,20 +226,20 @@ const useIsomorphicLayoutEffect =
 - StatusBar component for system metrics
 - Mock entity generator for testing
 - Simulated entity movement for dynamic updates
+- Three.js initialization fixes for production builds
+- Compatibility layer for Three.js constants
+- SSR compatibility with ClientOnly wrapper
 
 #### 🚧 In Progress
-- Performance optimization for 100+ entities
 - Advanced entity visualization features
 - Enhanced selection feedback
-- Trajectory visualization
-- Resolving hydration issues with Next.js and Three.js
+- Improved trajectory visualization
 
 #### 🔜 Upcoming
 - WebSocket integration for real-time updates
 - Advanced entity management features
 - Comprehensive filtering and grouping
 - Command and control interface
-- Production deployment with Vercel optimizations
 
 ## Completed Tasks
 

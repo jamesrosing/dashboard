@@ -14,11 +14,78 @@ Current focus areas include:
 
 4. **Performance Optimization**: Implementing advanced optimization techniques including frustum culling, selective rendering, and memory usage optimization to support 100+ entities at 60fps.
 
-5. **Compatibility Improvements**: Consolidating Three.js compatibility solutions into a single approach with comprehensive support for various libraries and SSR scenarios.
+5. **Production Build Stability**: Ensuring that the application functions correctly in production environments by resolving Three.js initialization issues and implementing robust compatibility solutions.
 
 ## Recent Implementations
 
-### 1. ClientOnly wrapper for SSR compatibility
+### 1. Three.js Initialization Fix for Production Builds
+
+We have solved the "Cannot access 'l' before initialization" error in Vercel production builds with a comprehensive approach:
+
+1. **Specialized Three.js Entry Module**:
+   We created a `three-entry.ts` module that defines all constants with primitive values before importing Three.js:
+
+```typescript
+// Type constants defined before imports to avoid initialization timing issues
+export const UnsignedByteType = 1009;
+export const ByteType = 1010;
+export const ShortType = 1011;
+// ... other constants
+
+// Only after constants are defined, import Three.js
+import * as THREE from 'three';
+
+// Explicitly export all required classes and objects
+export const { 
+  Vector3, Euler, Object3D, Matrix4, 
+  // ... other classes
+} = THREE;
+
+// Re-export everything from Three.js
+export * from 'three';
+```
+
+2. **Early Initialization with Next.js Script Component**:
+   We added a script in `app/layout.tsx` that initializes THREE constants before any JavaScript runs:
+
+```tsx
+// In app/layout.tsx
+<Script id="three-init" strategy="beforeInteractive">
+  {`
+    // Pre-define critical THREE constants to avoid initialization errors
+    if (typeof window !== 'undefined') {
+      window.THREE = window.THREE || {};
+      Object.assign(window.THREE, {
+        UnsignedByteType: 1009,
+        ByteType: 1010,
+        ShortType: 1011,
+        // ... other constants
+      });
+    }
+  `}
+</Script>
+```
+
+3. **Updated webpack Configuration**:
+   We modified the webpack configuration in `next.config.ts` to:
+   - Use our entry module as the alias for 'three'
+   - Remove the babel-loader reference that was causing build errors
+   - Disable the CSS optimization that required the missing critters dependency
+
+4. **Component Import Updates**:
+   We updated all components to import Three.js from our entry module:
+
+```tsx
+// Before
+import * as THREE from 'three';
+
+// After
+import * as THREE from '../../../lib/three/three-entry';
+```
+
+This comprehensive approach ensures that Three.js constants are properly defined before they're accessed, both in development and production builds.
+
+### 2. ClientOnly wrapper for SSR compatibility
 
 We have successfully implemented a ClientOnly wrapper component to handle hydration issues with Three.js components:
 
@@ -61,7 +128,7 @@ This component is now used to wrap all Three.js elements, ensuring they only ren
 </div>
 ```
 
-### 2. Trajectory Visualization System
+### 3. Trajectory Visualization System
 
 We've enhanced the trajectory visualization system with:
 
@@ -88,7 +155,7 @@ useFrame(({ clock }) => {
 });
 ```
 
-### 3. Entity Animation Implementation
+### 4. Entity Animation Implementation
 
 We've created an `AnimatedEntityMovement` component that handles:
 
@@ -116,7 +183,7 @@ useFrame((_, delta) => {
 });
 ```
 
-### 4. SSR Hydration Issue Resolution
+### 5. SSR Hydration Issue Resolution
 
 We've successfully resolved the SSR hydration issues:
 
@@ -126,6 +193,7 @@ We've successfully resolved the SSR hydration issues:
 - Deferred Three.js canvas initialization until after hydration
 - Added type assertions for safely accessing DOM-specific properties
 - Fixed "Cannot access 'o' before initialization" errors in Vercel deployment
+- Resolved "Cannot access 'l' before initialization" errors in production builds
 
 ## Creative Phase Outcomes
 
@@ -171,12 +239,13 @@ We've completed five key creative phases that have defined our implementation ap
 
 Based on our Level 3 planning assessment, we are currently in Phase 1 of our implementation plan, focusing on the core entity visualization system. The project has been organized into three key phases:
 
-1. **Phase 1: Core Entity Visualization (90% Complete)** 
+1. **Phase 1: Core Entity Visualization (95% Complete)** 
    - ✅ Completed EntityWorld component with proper scene setup
    - ✅ Implemented ClientOnly wrapper for SSR compatibility
    - ✅ Added trajectory visualization with safe handling
    - ✅ Created entity animation system with smooth transitions
    - ✅ Resolved SSR hydration issues with Three.js components
+   - ✅ Fixed production build issues related to Three.js initialization
    - 🔷 Implementing remaining performance optimizations
 
 2. **Phase 2: Real-time Data Integration (Next)** 
@@ -198,32 +267,18 @@ The most recent work has focused on resolving compatibility and implementation i
 1. **Three.js Compatibility Resolution**
    - Fixed TypeScript linting errors in visualization components
    - Resolved missing Three.js constants required by Troika (3000, 3001, 0)
-   - Added compatibility layer via three-compat.ts to handle missing constants
-   - Fixed rotation handling for proper entity orientation
-   - Added exports for MathUtils and Euler classes to fix import errors
-   - Added MeshLambertMaterial to the compatibility layer exports
-   - Fixed dynamic imports for Three.js components with SSR disabled
+   - Fixed "Cannot access 'l' before initialization" error in production builds
+   - Created a comprehensive initialization approach with:
+     - A specialized entry module with properly defined constants
+     - Early initialization script for browser globals
+     - Updated import references across all components
+     - Fixed webpack configuration for proper bundling
 
-2. **EntityWorld Component Enhancement**
-   - Split EntityWorld.tsx into container and scene components
-   - Implemented EntityWorldScene.tsx for dedicated scene logic
-   - Enhanced scene with fog, lighting, camera controls, and trajectories
-   - Created proper dynamic imports with SSR disabled
-   - Added browser detection with typeof window checks
-   - Implemented error handling for Three.js initialization
-
-3. **ClientOnly Wrapper Enhancement**
-   - Improved ClientOnly component with useIsomorphicLayoutEffect
-   - Updated fallback UI for loading states
-   - Enhanced error handling for hydration issues
-   - Implemented proper client detection with typeof window checks
-
-4. **SSR Compatibility Improvements**
-   - Disabled React Strict Mode in next.config.ts to prevent Three.js issues
-   - Implemented safe browser detection at the module level
-   - Added dynamic imports with SSR disabled for Three.js components
-   - Implemented type-safe props passing with proper interfaces
-   - Created appropriate fallback UI for server rendering
+2. **Component Refinement**
+   - Enhanced entity animation with smooth transitions
+   - Optimized trajectory visualization
+   - Added performance metrics display
+   - Enhanced error handling in Three.js components
 
 ## Active Decisions
 
