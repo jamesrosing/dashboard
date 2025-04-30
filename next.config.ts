@@ -23,11 +23,10 @@ const nextConfig: NextConfig = {
         config.resolve.alias = {};
       }
       
-      // We now point to our troika-compat-patch.ts file which has the initialization fixes
-      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/troika-compat-patch.ts');
+      // Use our simplified entry module that defines constants before importing
+      config.resolve.alias.three = path.resolve(__dirname, 'lib/three/three-entry.ts');
       
       // Ensure our initialize.ts gets bundled first in chunks that use Three.js
-      // This is critical for proper constant initialization
       if (!config.module) {
         config.module = { rules: [] };
       }
@@ -36,21 +35,8 @@ const nextConfig: NextConfig = {
         config.module.rules = [];
       }
       
-      // Make sure our initialization module is included in any chunk that uses Three.js
-      // but exclude it from node_modules to prevent conflicts
-      config.module.rules.push({
-        test: /\.(js|ts|tsx)$/,
-        exclude: /node_modules/,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              presets: ['next/babel'],
-              // No plugins needed, just want to ensure babel processes our files
-            }
-          }
-        ]
-      });
+      // Remove the custom babel-loader rule that was causing build issues
+      // Next.js already processes these files internally
       
       // This rule ensures that imports in node_modules aren't affected by our alias
       config.module.rules.push({

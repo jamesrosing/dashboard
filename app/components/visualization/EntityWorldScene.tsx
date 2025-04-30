@@ -1,5 +1,4 @@
-import '../../../lib/three/initialize';
-import * as THREE from '../../../lib/three/troika-compat-patch';
+import * as THREE from '../../../lib/three/three-entry';
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
