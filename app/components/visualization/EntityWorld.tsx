@@ -1,9 +1,16 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import ClientOnly from '../shared/ClientOnly';
+// Import the Three.js patching function to ensure it's applied
+import { ensureThreeJsPatched } from '../../../lib/three/initialize';
 
 // Safe browser detection
 const isBrowser = typeof window !== 'undefined';
+
+// Ensure Three.js patches are applied
+if (isBrowser) {
+  ensureThreeJsPatched();
+}
 
 // Dynamically import Three.js components with SSR disabled
 const ThreeCanvas = dynamic(
@@ -23,6 +30,13 @@ interface EntityWorldProps {
 
 // Main EntityWorld container that sets up the Three.js canvas
 export const EntityWorld: React.FC<EntityWorldProps> = ({ onFpsChange }) => {
+  // Apply patches when component mounts
+  useEffect(() => {
+    if (isBrowser) {
+      ensureThreeJsPatched();
+    }
+  }, []);
+
   return (
     <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-black to-gray-900">
       <ClientOnly fallback={
@@ -35,7 +49,7 @@ export const EntityWorld: React.FC<EntityWorldProps> = ({ onFpsChange }) => {
             <div className="text-gray-400">Loading 3D components...</div>
           </div>
         }>
-          <ThreeCanvas shadows gl={{ antialias: true }}>
+          <ThreeCanvas shadows gl={{ antialias: true, powerPreference: 'high-performance' }}>
             <fog attach="fog" args={['#050508', 100, 350]} />
             {/* @ts-ignore - Ignore type check for props */}
             <DynamicEntityWorldScene onFpsChange={onFpsChange} />
