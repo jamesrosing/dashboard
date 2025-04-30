@@ -14,56 +14,55 @@ const isBrowser = typeof window !== 'undefined';
 // by other imports to avoid circular reference issues
 import * as THREE_ORIGINAL from 'three';
 
-// Re-export everything from Three.js
-export * from 'three';
-
-// Define all constants first to avoid "Cannot access 'o' before initialization" errors
+// Define primitive values first - these do not reference other THREE variables
 // These constants were removed in Three.js r152 but are still used by Troika
 export const LinearEncoding = 3000;
 export const sRGBEncoding = 3001;
 export const NoToneMapping = 0;
 
-// Add various constants needed by different libraries
-// These ensure proper compatibility regardless of Three.js version
-export const UnsignedByteType = THREE_ORIGINAL.UnsignedByteType || 1009;
-export const ByteType = THREE_ORIGINAL.ByteType || 1010;
-export const ShortType = THREE_ORIGINAL.ShortType || 1011;
-export const UnsignedShortType = THREE_ORIGINAL.UnsignedShortType || 1012;
-export const IntType = THREE_ORIGINAL.IntType || 1013;
-export const UnsignedIntType = THREE_ORIGINAL.UnsignedIntType || 1014;
-export const FloatType = THREE_ORIGINAL.FloatType || 1015;
-export const HalfFloatType = THREE_ORIGINAL.HalfFloatType || 1016;
+// Basic type constants - directly using primitive values to avoid reference issues
+export const UnsignedByteType = 1009; 
+export const ByteType = 1010;
+export const ShortType = 1011;
+export const UnsignedShortType = 1012;
+export const IntType = 1013;
+export const UnsignedIntType = 1014;
+export const FloatType = 1015;
+export const HalfFloatType = 1016;
 
-// Format constants
-export const RGBAFormat = THREE_ORIGINAL.RGBAFormat || 1023;
-export const RGIntegerFormat = THREE_ORIGINAL.RGIntegerFormat || 1033;
-export const RedFormat = THREE_ORIGINAL.RedFormat || 1028;
-export const RGFormat = THREE_ORIGINAL.RGFormat || 1030;
-export const RedIntegerFormat = THREE_ORIGINAL.RedIntegerFormat || 1031;
-export const RGBAIntegerFormat = THREE_ORIGINAL.RGBAIntegerFormat || 1033;
+// Format constants - direct values
+export const RGBAFormat = 1023;
+export const RGIntegerFormat = 1033;
+export const RedFormat = 1028;
+export const RGFormat = 1030;
+export const RedIntegerFormat = 1031;
+export const RGBAIntegerFormat = 1033;
 
-// Filter and mapping constants
-export const LinearFilter = THREE_ORIGINAL.LinearFilter || 1006;
-export const NearestFilter = THREE_ORIGINAL.NearestFilter || 1003;
-export const ClampToEdgeWrapping = THREE_ORIGINAL.ClampToEdgeWrapping || 1001;
-export const UVMapping = THREE_ORIGINAL.UVMapping || 300;
-export const LinearMipMapLinearFilter = THREE_ORIGINAL.LinearMipMapLinearFilter || 1008;
+// Filter and mapping constants - direct values
+export const LinearFilter = 1006;
+export const NearestFilter = 1003;
+export const ClampToEdgeWrapping = 1001;
+export const UVMapping = 300;
+export const LinearMipMapLinearFilter = 1008;
 
-// Color space constants
-export const LinearSRGBColorSpace = THREE_ORIGINAL.LinearSRGBColorSpace || 'Linear';
-export const SRGBColorSpace = THREE_ORIGINAL.SRGBColorSpace || 'srgb';
+// Color space constants - direct values
+export const LinearSRGBColorSpace = 'Linear';
+export const SRGBColorSpace = 'srgb';
 
-// Blending mode constants
-export const NoBlending = THREE_ORIGINAL.NoBlending || 0;
+// Blending mode constants - direct values
+export const NoBlending = 0;
 
-// Side constants
-export const FrontSide = THREE_ORIGINAL.FrontSide || 0;
-export const BackSide = THREE_ORIGINAL.BackSide || 1;
-export const DoubleSide = THREE_ORIGINAL.DoubleSide || 2;
+// Side constants - direct values
+export const FrontSide = 0;
+export const BackSide = 1;
+export const DoubleSide = 2;
 
 // Version constant required by some libraries
 export const REVISION = THREE_ORIGINAL.REVISION || '176';
 export const UniformsLib = THREE_ORIGINAL.UniformsLib || {};
+
+// Now safe to re-export everything from Three.js
+export * from 'three';
 
 // Create safe references to all commonly used classes
 // This prevents "Cannot access 'o' before initialization" errors
@@ -128,37 +127,38 @@ export const ConeGeometry = THREE_ORIGINAL.ConeGeometry;
 export const CylinderGeometry = THREE_ORIGINAL.CylinderGeometry;
 export const TorusGeometry = THREE_ORIGINAL.TorusGeometry;
 
-// Create a patch object with all our constants
+// Create a patch object with all our constants using primitives only
 const PATCH_CONSTANTS = {
-  LinearEncoding,
-  sRGBEncoding,
-  NoToneMapping,
-  UnsignedByteType,
-  ByteType,
-  ShortType,
-  UnsignedShortType,
-  IntType,
-  UnsignedIntType,
-  FloatType,
-  HalfFloatType,
-  RGBAFormat,
-  RGIntegerFormat,
-  RedFormat,
-  RGFormat,
-  RedIntegerFormat,
-  RGBAIntegerFormat,
-  LinearFilter,
-  NearestFilter,
-  ClampToEdgeWrapping,
-  UVMapping,
-  LinearMipMapLinearFilter,
-  LinearSRGBColorSpace,
-  SRGBColorSpace,
-  NoBlending,
-  FrontSide,
-  BackSide,
-  DoubleSide,
-  REVISION
+  // Use primitive values directly to avoid variable references
+  LinearEncoding: 3000,
+  sRGBEncoding: 3001,
+  NoToneMapping: 0,
+  UnsignedByteType: 1009,
+  ByteType: 1010,
+  ShortType: 1011,
+  UnsignedShortType: 1012,
+  IntType: 1013,
+  UnsignedIntType: 1014,
+  FloatType: 1015,
+  HalfFloatType: 1016,
+  RGBAFormat: 1023,
+  RGIntegerFormat: 1033,
+  RedFormat: 1028,
+  RGFormat: 1030,
+  RedIntegerFormat: 1031,
+  RGBAIntegerFormat: 1033,
+  LinearFilter: 1006,
+  NearestFilter: 1003,
+  ClampToEdgeWrapping: 1001,
+  UVMapping: 300,
+  LinearMipMapLinearFilter: 1008,
+  LinearSRGBColorSpace: 'Linear',
+  SRGBColorSpace: 'srgb',
+  NoBlending: 0,
+  FrontSide: 0,
+  BackSide: 1,
+  DoubleSide: 2,
+  REVISION: THREE_ORIGINAL.REVISION || '176'
 };
 
 // Flag to track if patches have been applied
@@ -180,7 +180,7 @@ export function applyThreeCompatibilityPatches() {
         (window as any).THREE = { ...THREE_ORIGINAL };
       }
       
-      // Apply patch constants
+      // Apply patch constants using direct assignment
       Object.entries(PATCH_CONSTANTS).forEach(([key, value]) => {
         (window as any).THREE[key] = value;
       });
