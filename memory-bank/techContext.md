@@ -158,3 +158,82 @@ npm run cypress
 - `@testing-library/react`: Component testing
 - `cypress`: E2E testing
 - `@types/three`: TypeScript types for Three.js 
+
+## Deployment Considerations
+
+### Vercel Deployment
+The application is deployed on Vercel with the following configuration:
+- Output directory: `.next`
+- Node.js version: 20.x
+- Environment variables configured for production
+
+### Environment Variables
+- `NEXT_PUBLIC_API_URL`: API endpoint URL
+- `NEXT_PUBLIC_WS_URL`: WebSocket endpoint URL
+- `NEXT_PUBLIC_MOCK_DATA`: Enable mock data in production (true/false)
+
+### Scaling Considerations
+- WebSocket connections are scaled horizontally
+- Static assets are cached at the edge
+- API requests use serverless functions with auto-scaling
+
+## Vercel Deployment Troubleshooting for Three.js Applications
+
+### Common Issues
+1. **Missing Environment Variables**
+   - Environment variables needed for Three.js rendering must be added to Vercel dashboard
+   - Client-side variables must be prefixed with `NEXT_PUBLIC_`
+   - Ensure variables are enabled for all environments (Production, Preview, Development)
+
+2. **React Three Fiber Integration Issues**
+   - Errors like "Link is not part of the THREE namespace! Did you forget to extend?"
+   - Canvas component may need specific configuration for production
+   - Proper imports of THREE namespace components are critical
+
+3. **Dependencies Configuration**
+   - Three.js and related libraries must be in "dependencies" (not "devDependencies")
+   - Peer dependencies should be properly resolved
+
+4. **React Strict Mode Conflicts**
+   - Three.js may have compatibility issues with React Strict Mode
+   - Consider disabling Strict Mode in production:
+     ```js
+     // next.config.js
+     const nextConfig = {
+       reactStrictMode: false,
+       // other config
+     };
+     module.exports = nextConfig;
+     ```
+
+5. **Client-Side Routing Issues**
+   - Add proper redirect rules in `vercel.json` for client-side routing
+   - Configure fallbacks for direct URL access
+
+### Troubleshooting Steps
+1. Check browser console for specific error messages
+2. Verify all environment variables in Vercel dashboard
+3. Review dependencies in package.json
+4. Check for React Three Fiber compatibility issues
+5. Implement proper error boundaries around Three.js components
+6. Use ClientOnly wrapper for Three.js components to prevent SSR issues
+
+### Performance Optimization for Production
+1. Enable code splitting for Three.js components
+2. Implement dynamic imports for large Three.js modules
+3. Optimize 3D models and textures for production
+4. Configure proper caching headers for static assets
+5. Use CDN for large model or texture files
+
+## Technical Debt and Limitations
+
+### Known Issues
+- Limited browser compatibility with older browsers
+- Performance degradation with >500 entities
+- Mobile device performance varies significantly
+
+### Future Improvements
+- WebGL 2.0 optimizations for performance
+- WebAssembly for computation-intensive tasks
+- OffscreenCanvas for improved worker thread rendering
+- GPU-based particle systems for large entity counts 

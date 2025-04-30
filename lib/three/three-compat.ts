@@ -59,6 +59,7 @@ export const Mesh = THREE.Mesh;
 export const PlaneGeometry = THREE.PlaneGeometry;
 export const MeshBasicMaterial = THREE.MeshBasicMaterial;
 export const MeshStandardMaterial = THREE.MeshStandardMaterial;
+export const MeshLambertMaterial = THREE.MeshLambertMaterial;
 export const Scene = THREE.Scene;
 export const OrthographicCamera = THREE.OrthographicCamera;
 export const WebGLRenderer = THREE.WebGLRenderer;
@@ -89,6 +90,11 @@ export const LineBasicMaterial = THREE.LineBasicMaterial;
 export const LatheGeometry = THREE.LatheGeometry;
 export const Path = THREE.Path;
 export const BatchedMesh = THREE.BatchedMesh || class {}; // Might not exist in older versions
+export const Euler = THREE.Euler;
+export const MathUtils = THREE.MathUtils || { 
+  lerp: (x: number, y: number, t: number) => x + (y - x) * t,
+  clamp: (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
+};
 
 // Add geometries used by our application
 export const BoxGeometry = THREE.BoxGeometry;

@@ -1,4 +1,7 @@
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState, ReactNode } from 'react';
+
+// Use useLayoutEffect on client side for earlier execution, fallback to useEffect on server
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface ClientOnlyProps {
   children: ReactNode;
@@ -11,6 +14,9 @@ interface ClientOnlyProps {
  * This component prevents hydration errors by only rendering its children
  * after the component has mounted on the client. During SSR and initial
  * hydration, it renders an optional fallback (or null).
+ * 
+ * Enhanced with useIsomorphicLayoutEffect for better initialization timing,
+ * which is crucial for Three.js components in production.
  * 
  * Use this component to wrap any components that:
  * - Use browser-only APIs (window, document, etc.)
@@ -25,7 +31,8 @@ interface ClientOnlyProps {
 export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
   const [isMounted, setIsMounted] = useState(false);
   
-  useEffect(() => {
+  // Use isomorphic layout effect for earlier detection of client environment
+  useIsomorphicLayoutEffect(() => {
     setIsMounted(true);
   }, []);
   

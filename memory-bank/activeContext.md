@@ -194,33 +194,32 @@ The most recent work has focused on resolving compatibility and implementation i
 1. **Three.js Compatibility Resolution**
    - Fixed TypeScript linting errors in visualization components
    - Resolved missing Three.js constants required by Troika (3000, 3001, 0)
-   - Added compatibility layer via module-fix.ts to handle missing constants
+   - Added compatibility layer via three-compat.ts to handle missing constants
    - Fixed rotation handling for proper entity orientation
+   - Added exports for MathUtils and Euler classes to fix import errors
+   - Added MeshLambertMaterial to the compatibility layer exports
+   - Fixed dynamic imports for Three.js components with SSR disabled
 
-2. **EntityWorld Implementation**
-   - Created a comprehensive EntityWorld component with scene setup
-   - Implemented efficient entity grouping by type
-   - Added performance monitoring with FPS tracking
-   - Created proper camera controls and lighting
+2. **EntityWorld Component Enhancement**
+   - Split EntityWorld.tsx into container and scene components
+   - Implemented EntityWorldScene.tsx for dedicated scene logic
+   - Enhanced scene with fog, lighting, camera controls, and trajectories
+   - Created proper dynamic imports with SSR disabled
+   - Added browser detection with typeof window checks
+   - Implemented error handling for Three.js initialization
 
-3. **Entity Rendering System**
-   - Implemented a component-based architecture with React Three Fiber
-   - Created type-specific renderers with appropriate geometries
-   - Added status visualization through color coding
-   - Implemented efficient instance rendering
+3. **ClientOnly Wrapper Enhancement**
+   - Improved ClientOnly component with useIsomorphicLayoutEffect
+   - Updated fallback UI for loading states
+   - Enhanced error handling for hydration issues
+   - Implemented proper client detection with typeof window checks
 
-4. **Mock Data Generation**
-   - Created a comprehensive mock entity generator
-   - Added randomized entity properties for testing
-   - Implemented realistic initial distribution of entities
-   - Added simulated movement for testing dynamic updates
-
-5. **Layout Consolidation**
-   - Removed unused MainLayout.tsx component
-   - Consolidated layout implementation in Dashboard.tsx
-   - Eliminated TypeScript and linter errors from unused code
-   - Simplified project structure with a single consistent layout approach
-   - Implemented improved Split-Pane layout directly in Dashboard component
+4. **SSR Compatibility Improvements**
+   - Disabled React Strict Mode in next.config.ts to prevent Three.js issues
+   - Implemented safe browser detection at the module level
+   - Added dynamic imports with SSR disabled for Three.js components
+   - Implemented type-safe props passing with proper interfaces
+   - Created appropriate fallback UI for server rendering
 
 ## Active Decisions
 

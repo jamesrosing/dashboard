@@ -3,6 +3,7 @@ import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  reactStrictMode: false, // Disable Strict Mode to prevent Three.js issues in production
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
