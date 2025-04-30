@@ -43,11 +43,27 @@
   - Auto-reconnection handling
   - Binary data support
 
-- **Protocol Buffers**: Data serialization:
-  - Compact binary format
-  - Efficient encoding/decoding
-  - Strict typing for messages
-  - Cross-platform compatibility
+- **Socket.IO**: WebSocket library with enhanced capabilities:
+  - Automatic fallback to HTTP long-polling
+  - Built-in reconnection logic
+  - Room-based messaging (for entity groups)
+  - Middleware support for authentication
+  - Connection state management
+
+- **WebSocket Server-Side Implementation**:
+  - Next.js API routes with ws package
+  - Custom WebSocket upgrade handling
+  - Message type standardization
+  - Mock data generation for testing
+  - Command processing interface
+
+- **WebSocket Client Architecture**:
+  - WebSocketManager class for connection handling
+  - Reconnection with exponential backoff
+  - Message queue for offline scenarios
+  - Typed message handlers
+  - Ping/pong for latency monitoring
+  - React hooks for component integration
 
 ### Performance Optimization
 - **Web Workers**: For background processing:
@@ -87,11 +103,13 @@
 - UI must remain responsive during high-frequency updates
 - Visualization must render smoothly on mid-range hardware
 - Memory usage must remain reasonable for long sessions
+- WebSocket reconnection must be fast and reliable
 
 ### Browser Requirements
 - Primary support: Chrome, Edge, Firefox (latest 2 versions)
 - Secondary support: Safari (latest version)
 - WebGL 2.0 support required
+- WebSocket support required
 - No IE11 support required
 
 ### Network Requirements
@@ -99,6 +117,7 @@
 - Must handle intermittent connectivity gracefully
 - Reconnection strategy required for connection drops
 - Latency display for connection quality awareness
+- Message queueing for offline scenarios
 
 ### Compatibility Issues
 - Three.js version 0.176.0 has breaking changes from earlier versions
@@ -147,8 +166,9 @@ npm run cypress
 - `@react-three/drei`: Useful helpers for React Three Fiber
 - `@reduxjs/toolkit`: State management
 - `react-redux`: React bindings for Redux
-- `socket.io-client`: WebSocket client
-- `protobufjs`: Protocol Buffers for JavaScript
+- `socket.io-client`: WebSocket client with enhanced features
+- `ws`: WebSocket server implementation for Node.js API routes
+- `@types/ws`: TypeScript types for ws package
 
 ### Development Dependencies
 - `typescript`: 5.x
@@ -159,6 +179,208 @@ npm run cypress
 - `cypress`: E2E testing
 - `@types/three`: TypeScript types for Three.js 
 
+## WebSocket Implementation
+
+### Connection Architecture
+```mermaid
+flowchart TD
+    Client[Client Browser] <--> WSManager[WebSocketManager]
+    WSManager <--> Redux[Redux Store]
+    WSManager <--> Server[WebSocket Server]
+    Redux --> React[React Components]
+    Server <--> EntityProcessor[Entity Update Processor]
+    EntityProcessor <--> MockData[Mock Data Generator]
+    
+    subgraph Client-Side
+        Client
+        WSManager
+        Redux
+        React
+    end
+    
+    subgraph Server-Side
+        Server
+        EntityProcessor
+        MockData
+    end
+```
+
+### Reconnection Strategy
+The WebSocket implementation uses an exponential backoff strategy for reconnection:
+
+```typescript
+// Reconnection with exponential backoff
+private attemptReconnection(): void {
+  if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
+    // Max attempts reached, notify application
+    return;
+  }
+  
+  this.reconnectAttempts++;
+  this.updateConnectionState(ConnectionState.RECONNECTING);
+  
+  // Calculate delay with exponential backoff
+  const delay = this.config.reconnectInterval * Math.min(this.reconnectAttempts, 5);
+  
+  // Schedule reconnection attempt
+  this.reconnectTimer = setTimeout(() => {
+    this.connect().catch(() => {
+      // Connection failed, will try again automatically
+    });
+  }, delay);
+}
+```
+
+### WebSocket Message Types
+```typescript
+// Standardized WebSocket message types
+export enum MessageType {
+  ENTITY_UPDATE = 'entityUpdate',
+  ENTITY_BATCH_UPDATE = 'entityBatchUpdate',
+  ENTITY_DELETE = 'entityDelete',
+  CONNECTION_STATUS = 'connectionStatus',
+  AUTHENTICATION = 'authentication',
+  COMMAND = 'command',
+  COMMAND_RESPONSE = 'commandResponse',
+  ERROR = 'error'
+}
+```
+
+### WebSocket Message Structure
+```typescript
+// Standard WebSocket message interface
+export interface WebSocketMessage {
+  type: MessageType;
+  payload: any;
+  timestamp?: number;
+  messageId?: string;
+}
+```
+
+### Message Handling
+```typescript
+// Message handler registration system
+registerMessageHandler(type: MessageType, handler: (message: WebSocketMessage) => void): void {
+  if (!this.messageHandlers.has(type)) {
+    this.messageHandlers.set(type, []);
+  }
+  
+  this.messageHandlers.get(type)!.push(handler);
+}
+
+// Message processing
+private processMessage(message: WebSocketMessage): void {
+  // Process based on message type
+  switch (message.type) {
+    case MessageType.ENTITY_UPDATE:
+      // Handle entity update
+      break;
+    case MessageType.ENTITY_BATCH_UPDATE:
+      // Handle batch update
+      break;
+    // ...other message types
+  }
+  
+  // Notify registered handlers
+  this.notifyMessageHandlers(message);
+}
+```
+
+### Latency Monitoring
+The WebSocket implementation uses a ping/pong mechanism to measure connection latency:
+
+```typescript
+// Ping function for latency measurement
+const ping = useCallback(async () => {
+  if (connectionState !== ConnectionState.CONNECTED) {
+    return;
+  }
+  
+  // Record start time
+  const startTime = Date.now();
+  
+  // Wait for pong response
+  const pongPromise = new Promise<number>((resolve) => {
+    const handlePong = (message: any) => {
+      if (message.type === 'pong') {
+        // Calculate latency
+        const latency = Date.now() - startTime;
+        resolve(latency);
+      }
+    };
+    
+    // Register handler and set timeout
+    // ...
+  });
+  
+  // Send ping message
+  websocketManager.sendMessage({
+    type: MessageType.CONNECTION_STATUS,
+    payload: {
+      type: 'ping',
+      timestamp: Date.now()
+    }
+  });
+  
+  // Update latency in Redux store
+  const latency = await pongPromise;
+  
+  if (latency > 0) {
+    dispatch({
+      type: 'websocket/connectionStatusUpdate',
+      payload: { latency }
+    });
+  }
+}, [connectionState, dispatch]);
+```
+
+## Entity Filtering Implementation
+
+### Filter Criteria Structure
+```typescript
+// Comprehensive filter criteria interface
+export interface FilterCriteria {
+  id: string;
+  name: string;
+  description?: string;
+  types?: EntityType[];
+  statuses?: EntityStatus[];
+  tags?: string[];
+  healthMin?: number;
+  healthMax?: number;
+  positionBounds?: {
+    x: [number, number] | null;
+    y: [number, number] | null;
+    z: [number, number] | null;
+  };
+  customFilter?: string;
+  isActive: boolean;
+  isPinned: boolean;
+  dateCreated: number;
+  dateModified: number;
+}
+```
+
+### Filter State Management
+```typescript
+// Entity filter state
+interface EntityFilterState {
+  activeFilterId: string | null;
+  savedFilters: Record<string, FilterCriteria>;
+  quickFilters: {
+    types: EntityType[];
+    statuses: EntityStatus[];
+    tags: string[];
+    healthThreshold: number | null;
+  };
+  filteredIds: string[];
+  highlightedIds: string[];
+  hiddenIds: string[];
+  showingFiltered: boolean;
+  showHidden: boolean;
+}
+```
+
 ## Deployment Considerations
 
 ### Vercel Deployment
@@ -166,64 +388,31 @@ The application is deployed on Vercel with the following configuration:
 - Output directory: `.next`
 - Node.js version: 20.x
 - Environment variables configured for production
+- WebSocket API route using Node.js runtime (not Edge runtime)
 
 ### Environment Variables
 - `NEXT_PUBLIC_API_URL`: API endpoint URL
 - `NEXT_PUBLIC_WS_URL`: WebSocket endpoint URL
 - `NEXT_PUBLIC_MOCK_DATA`: Enable mock data in production (true/false)
 
+### WebSocket Server Configuration
+For WebSocket server, the application requires:
+- Node.js runtime for WebSocket support
+- Configuration of ws package for server-side WebSocket
+- Proper request handling for WebSocket upgrade
+- Correct CORS configuration for WebSocket connections
+
+```typescript
+// Configuration for WebSocket API route
+export const config = {
+  runtime: 'nodejs'
+};
+```
+
 ### Scaling Considerations
 - WebSocket connections are scaled horizontally
 - Static assets are cached at the edge
 - API requests use serverless functions with auto-scaling
-
-## Vercel Deployment Troubleshooting for Three.js Applications
-
-### Common Issues
-1. **Missing Environment Variables**
-   - Environment variables needed for Three.js rendering must be added to Vercel dashboard
-   - Client-side variables must be prefixed with `NEXT_PUBLIC_`
-   - Ensure variables are enabled for all environments (Production, Preview, Development)
-
-2. **React Three Fiber Integration Issues**
-   - Errors like "Link is not part of the THREE namespace! Did you forget to extend?"
-   - Canvas component may need specific configuration for production
-   - Proper imports of THREE namespace components are critical
-
-3. **Dependencies Configuration**
-   - Three.js and related libraries must be in "dependencies" (not "devDependencies")
-   - Peer dependencies should be properly resolved
-
-4. **React Strict Mode Conflicts**
-   - Three.js may have compatibility issues with React Strict Mode
-   - Consider disabling Strict Mode in production:
-     ```js
-     // next.config.js
-     const nextConfig = {
-       reactStrictMode: false,
-       // other config
-     };
-     module.exports = nextConfig;
-     ```
-
-5. **Client-Side Routing Issues**
-   - Add proper redirect rules in `vercel.json` for client-side routing
-   - Configure fallbacks for direct URL access
-
-### Troubleshooting Steps
-1. Check browser console for specific error messages
-2. Verify all environment variables in Vercel dashboard
-3. Review dependencies in package.json
-4. Check for React Three Fiber compatibility issues
-5. Implement proper error boundaries around Three.js components
-6. Use ClientOnly wrapper for Three.js components to prevent SSR issues
-
-### Performance Optimization for Production
-1. Enable code splitting for Three.js components
-2. Implement dynamic imports for large Three.js modules
-3. Optimize 3D models and textures for production
-4. Configure proper caching headers for static assets
-5. Use CDN for large model or texture files
 
 ## Technical Debt and Limitations
 
@@ -231,299 +420,11 @@ The application is deployed on Vercel with the following configuration:
 - Limited browser compatibility with older browsers
 - Performance degradation with >500 entities
 - Mobile device performance varies significantly
+- WebSocket implementation requires Node.js runtime
 
 ### Future Improvements
 - WebGL 2.0 optimizations for performance
 - WebAssembly for computation-intensive tasks
 - OffscreenCanvas for improved worker thread rendering
-- GPU-based particle systems for large entity counts 
-
-## Three.js Compatibility
-
-### Consolidated Compatibility Approach
-
-We've implemented a comprehensive compatibility solution to handle various Three.js version issues:
-
-```typescript
-// lib/three/troika-compat-patch.ts
-/**
- * Consolidated compatibility module for Three.js and Troika
- * 
- * This file provides all necessary constants, classes, and patches
- * to ensure compatibility between Three.js, React Three Fiber, and Troika.
- * 
- * It consolidates multiple compatibility files into a single source of truth.
- */
-
-// Add missing constants removed in Three.js r152
-export const LinearEncoding = 3000;
-export const sRGBEncoding = 3001;
-export const NoToneMapping = 0;
-
-// Apply patches at application initialization
-export function applyThreeCompatibilityPatches() {
-  if (typeof window !== 'undefined') {
-    (window as any).THREE = {
-      ...THREE,
-      LinearEncoding,
-      sRGBEncoding,
-      NoToneMapping,
-    };
-  }
-  return true;
-}
-```
-
-This consolidated approach replaces multiple separate compatibility files:
-- `lib/three/three-compat.ts`
-- `lib/three/three-patch.js`
-- `lib/three/patch-troika.js`
-- `app/utils/three-patch-global.ts`
-
-All compatibility constants, classes, and utilities are now in a single location, making maintenance and updates simpler.
-
-### Three.js Initialization Safety Pattern
-
-To address production build issues where Three.js objects are accessed before they're fully initialized ("Cannot access 'o', 'l', 'C' before initialization" errors), we've implemented a robust pattern:
-
-1. **Proper Inheritance Hierarchy Implementation**
-```typescript
-// First define EventDispatcher for inheritance
-if (!(window as any).THREE.EventDispatcher) {
-  (window as any).THREE.EventDispatcher = function() {};
-  (window as any).THREE.EventDispatcher.prototype = {
-    constructor: (window as any).THREE.EventDispatcher,
-    addEventListener: function() { return this; },
-    hasEventListener: function() { return false; },
-    removeEventListener: function() { return this; },
-    dispatchEvent: function() { return this; }
-  };
-}
-
-// Create Object3D with proper inheritance
-(window as any).THREE.Object3D = function() {
-  // Properties initialization
-  // ...
-};
-
-// Inherit from EventDispatcher
-(window as any).THREE.Object3D.prototype = Object.create((window as any).THREE.EventDispatcher.prototype);
-(window as any).THREE.Object3D.prototype.constructor = (window as any).THREE.Object3D;
-
-// Group inherits from Object3D
-(window as any).THREE.Group.prototype = Object.create((window as any).THREE.Object3D.prototype);
-(window as any).THREE.Group.prototype.constructor = (window as any).THREE.Group;
-```
-
-2. **Comprehensive Object3D Implementation**
-```typescript
-// CRITICAL: Object3D stub implementation
-constants.Object3D = function() {
-  this.isObject3D = true;
-  this.id = Math.floor(Math.random() * 100000);
-  this.uuid = constants.MathUtils.generateUUID();
-  this.name = '';
-  this.type = 'Object3D';
-  this.parent = null;
-  this.children = [];
-  this.up = { x: 0, y: 1, z: 0, isVector3: true };
-  this.position = { x: 0, y: 0, z: 0, isVector3: true };
-  this.rotation = { x: 0, y: 0, z: 0, order: 'XYZ', isEuler: true };
-  this.quaternion = { x: 0, y: 0, z: 0, w: 1, isQuaternion: true };
-  this.scale = { x: 1, y: 1, z: 1, isVector3: true };
-  this.modelViewMatrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
-  this.normalMatrix = { elements: [1,0,0, 0,1,0, 0,0,1], isMatrix3: true };
-  this.matrix = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
-  this.matrixWorld = { elements: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], isMatrix4: true };
-  this.matrixAutoUpdate = true;
-  this.matrixWorldNeedsUpdate = false;
-  this.layers = { mask: 1 };
-  this.visible = true;
-  this.castShadow = false;
-  this.receiveShadow = false;
-  this.frustumCulled = true;
-  this.renderOrder = 0;
-  this.userData = {};
-  this.listeners = {};
-  
-  // Apply EventDispatcher properties
-  constants.EventDispatcher.call(this);
-  
-  // Method implementations for add, remove, traverse, etc.
-  this.add = function(object) { 
-    // Full implementation with proper child/parent handling
-    // ...
-  };
-  this.remove = function(object) {
-    // Full implementation with proper child/parent handling
-    // ...
-  };
-  // Additional methods...
-};
-```
-
-3. **Safe Component Creation Utilities**
-```typescript
-// Safe Vector3 creation helper function to prevent initialization errors
-const safeVector3 = (x: number, y: number, z: number): any => {
-  try {
-    return new (THREE as any).Vector3(x || 0, y || 0, z || 0);
-  } catch (e) {
-    // Fallback if THREE.Vector3 is not available
-    return {
-      x: x || 0,
-      y: y || 0,
-      z: z || 0,
-      isVector3: true,
-      copy: function(v: any) { 
-        this.x = v.x; this.y = v.y; this.z = v.z; 
-        return this; 
-      },
-      equals: function(v: any) {
-        return this.x === v.x && this.y === v.y && this.z === v.z;
-      },
-      // Additional methods...
-    };
-  }
-};
-```
-
-4. **MathUtils Implementation to Prevent Circular References**
-```typescript
-// Create MathUtils helper for UUID generation
-const MathUtils = {
-  generateUUID: function() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  },
-  clamp: function(value: number, min: number, max: number) {
-    return Math.max(min, Math.min(max, value));
-  },
-  lerp: function(x: number, y: number, t: number) {
-    return (1 - t) * x + t * y;
-  },
-  DEG2RAD: Math.PI / 180,
-  RAD2DEG: 180 / Math.PI
-};
-```
-
-5. **Enhanced Helper Functions**
-```typescript
-// Enhanced helper function with error handling
-export function positionToVector3(position: Position): any {
-  // Null check as first line of defense
-  if (!position) return new (THREE as any).Vector3(0, 0, 0);
-  
-  try {
-    // Primary implementation
-    return new (THREE as any).Vector3(
-      position.x || 0,
-      position.y || 0,
-      position.z || 0
-    );
-  } catch (e) {
-    // Fallback object with identical interface
-    return {
-      x: position.x || 0,
-      y: position.y || 0,
-      z: position.z || 0,
-      isVector3: true,
-      // Methods implemented to match THREE.Vector3
-    };
-  }
-}
-```
-
-6. **Safe Constants Access**
-```typescript
-// Safe constant access function
-const getBackSide = (): any => {
-  try {
-    return (THREE as any).BackSide;
-  } catch (e) {
-    return 1; // Known constant value for BackSide
-  }
-};
-```
-
-This comprehensive approach ensures Three.js objects and their prototype chains are properly established before they're accessed during initialization, preventing the "Cannot access 'o', 'l', 'C' before initialization" errors in production builds. By creating the complete inheritance hierarchy early in the initialization process, we ensure all required classes and their relationships are properly defined at the right time.
-
-### Performance Optimization
-
-We've implemented several performance optimizations for handling large entity counts:
-
-1. **Frustum Culling**: Entities outside the camera's view frustum are now culled to reduce rendering overhead:
-   ```typescript
-   // Update frustum for culling test
-   projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-   frustum.setFromProjectionMatrix(projScreenMatrix);
-   
-   // Perform frustum culling
-   const visible = entities.filter(entity => {
-     // Create a bounding sphere for this entity
-     const boundingSphere = new THREE.Sphere(position, radius);
-     
-     // Test if the entity is in view frustum
-     return frustum.intersectsSphere(boundingSphere);
-   });
-   ```
-
-2. **Level of Detail (LOD)**: Entities use different geometry and material complexity based on distance:
-   ```typescript
-   // Update LOD based on distance
-   if (distance > 5000 && currentLOD !== 2) {
-     setCurrentLOD(2); // Low detail
-   } else if (distance > 1000 && distance <= 5000 && currentLOD !== 1) {
-     setCurrentLOD(1); // Medium detail
-   } else if (distance <= 1000 && currentLOD !== 0) {
-     setCurrentLOD(0); // High detail
-   }
-   ```
-
-3. **Selective Trajectory Rendering**: Trajectories are only calculated for important/visible entities:
-   ```typescript
-   // If showing all trajectories, limit to a reasonable number
-   if (showAllTrajectories) {
-     // Take at most 30 entities for all trajectories to avoid overwhelming the GPU
-     const maxEntities = Math.min(entities.length, 30);
-     setEntitiesWithTrajectories(entities.slice(0, maxEntities));
-   } else {
-     // Only show trajectory for selected entity
-     const selectedEntity = entities.find(e => e.id === selectedEntityId);
-     setEntitiesWithTrajectories(selectedEntity ? [selectedEntity] : []);
-   }
-   ```
-
-4. **Frame-based Update Frequency**: Entities are updated at different frequencies based on distance:
-   ```typescript
-   const UPDATE_FREQUENCY = {
-     HIGH_DETAIL: 1,      // Update every frame
-     MEDIUM_DETAIL: 2,    // Update every 2 frames
-     LOW_DETAIL: 5,       // Update every 5 frames
-     VERY_FAR: 10         // Update every 10 frames
-   };
-   ```
-
-### Performance Monitoring
-
-We've added comprehensive performance monitoring:
-
-1. **PerformanceMetrics Component**: A new component that visualizes:
-   - FPS counter with color coding
-   - Entity count statistics
-   - Memory usage tracking (Chrome only)
-   - Type-specific entity breakdowns
-
-2. **StatusBar Integration**: The status bar now shows real-time FPS and can expand to show detailed metrics.
-
-### SSR Compatibility Best Practices
-
-For server-side rendering compatibility with Three.js:
-
-1. Use the `ClientOnly` wrapper component for all Three.js elements
-2. Implement explicit browser detection with `typeof window !== 'undefined'`
-3. Use safe useEffect guards to prevent server-side execution
-4. Defer Three.js initialization until after hydration
-5. Use compatibility constants for missing Three.js values 
+- GPU-based particle systems for large entity counts
+- Protocol Buffers for efficient message serialization 

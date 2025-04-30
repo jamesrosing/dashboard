@@ -8,6 +8,8 @@ import {
   setTrajectoryEnabled,
   clearTrajectories
 } from '@/lib/state/entitySlice';
+import { useWebSocketConnection } from '@/lib/websocket/useWebSocketConnection';
+import { ConnectionState } from '@/lib/websocket/websocketManager';
 import ClientOnly from './shared/ClientOnly';
 import SplitPane from './shared/layout/SplitPane';
 import Panel from './shared/layout/Panel';
@@ -27,24 +29,72 @@ export default function Dashboard() {
     state => selectedEntityId ? selectEntityById(state, selectedEntityId) : undefined
   );
   
-  // Simulate entity movement (client-side only)
+  // Initialize WebSocket connection
+  const { connectionState, connect, subscribeToEntityUpdates } = useWebSocketConnection();
+  
+  // Connect to WebSocket on component mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Update each entity one by one
-      entities.slice(0, 15).forEach(entity => {
-        dispatch(updateEntityPosition({
-          id: entity.id,
-          position: {
-            x: entity.position.x + (Math.random() - 0.5) * 0.5,
-            y: entity.position.y + (Math.random() - 0.5) * 0.2,
-            z: entity.position.z + (Math.random() - 0.5) * 0.5,
-          }
-        }));
-      });
-    }, 100);
-    
-    return () => clearInterval(interval);
-  }, [entities, dispatch]);
+    // Only run client-side
+    if (typeof window !== 'undefined') {
+      connect();
+    }
+  }, [connect]);
+  
+  // Subscribe to entity updates when connected
+  useEffect(() => {
+    if (connectionState === ConnectionState.CONNECTED) {
+      subscribeToEntityUpdates();
+    }
+  }, [connectionState, subscribeToEntityUpdates]);
+  
+  // Get connection status for header
+  const getConnectionStatusElement = () => {
+    switch (connectionState) {
+      case ConnectionState.CONNECTED:
+        return <div className="px-3 py-1 rounded text-sm text-green-500 border border-green-600">Connected</div>;
+      case ConnectionState.CONNECTING:
+      case ConnectionState.RECONNECTING:
+        return <div className="px-3 py-1 rounded text-sm text-yellow-500 border border-yellow-600">Connecting</div>;
+      case ConnectionState.ERROR:
+        return <div className="px-3 py-1 rounded text-sm text-red-500 border border-red-600">Error</div>;
+      case ConnectionState.DISCONNECTED:
+      default:
+        return (
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 rounded text-sm text-red-500 border border-red-600">Disconnected</div>
+            <button 
+              onClick={() => connect()}
+              className="px-3 py-1 rounded text-sm bg-blue-600 hover:bg-blue-700"
+            >
+              Connect
+            </button>
+          </div>
+        );
+    }
+  };
+  
+  // Simulate entity movement (client-side only)
+  // This will be replaced with real WebSocket data in Phase 2
+  useEffect(() => {
+    // Only run simulation if not connected to real data source
+    if (connectionState !== ConnectionState.CONNECTED) {
+      const interval = setInterval(() => {
+        // Update each entity one by one
+        entities.slice(0, 15).forEach(entity => {
+          dispatch(updateEntityPosition({
+            id: entity.id,
+            position: {
+              x: entity.position.x + (Math.random() - 0.5) * 0.5,
+              y: entity.position.y + (Math.random() - 0.5) * 0.2,
+              z: entity.position.z + (Math.random() - 0.5) * 0.5,
+            }
+          }));
+        });
+      }, 100);
+      
+      return () => clearInterval(interval);
+    }
+  }, [entities, dispatch, connectionState]);
 
   return (
     <div className="grid grid-rows-[60px_1fr_30px] h-screen w-screen bg-black text-white">
@@ -56,7 +106,7 @@ export default function Dashboard() {
           <h1 className="text-xl font-bold">Real-time Multi-Entity Dashboard</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="px-3 py-1 rounded text-sm text-green-500 border border-green-600">Connected</div>
+          {getConnectionStatusElement()}
           <div className="flex items-center gap-2">
             <span className="text-sm">Entities: {entities.length}</span>
             <span className="text-sm">|</span>
@@ -148,6 +198,10 @@ export default function Dashboard() {
                     <div>
                       <span className="text-gray-500 mr-1">Update:</span>
                       10Hz
+                    </div>
+                    <div>
+                      <span className="text-gray-500 mr-1">Data Source:</span>
+                      {connectionState === ConnectionState.CONNECTED ? 'WebSocket' : 'Simulation'}
                     </div>
                   </div>
                   

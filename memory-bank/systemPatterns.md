@@ -6,6 +6,9 @@ The dashboard application follows a modern architecture optimized for high-perfo
 ```
 dashboard/
 ├── app/              # Next.js App Router files
+│   ├── api/            # API routes including WebSocket
+│   ├── components/     # React components
+│   └── utils/          # Utility functions
 ├── components/       # React components organized by feature
 │   ├── visualization/  # 3D visualization components
 │   ├── controls/       # UI controls and panels
@@ -36,9 +39,10 @@ dashboard/
 
 ### Real-time Communication
 - **WebSockets**: Bidirectional communication for entity updates
-- **Protocol Buffers**: Efficient binary serialization format
-- **Reconnection Handling**: Automatic reconnection with state recovery
+- **Connection Management**: Robust connection handling with auto-reconnection
+- **Message Queue**: Handling offline scenarios with message queueing
 - **Latency Optimization**: Minimizing network overhead for critical updates
+- **Ping/Pong Mechanism**: Measuring and monitoring connection latency
 
 ### Performance Optimization
 - **Web Workers**: Offloading heavy computation from main thread
@@ -51,15 +55,35 @@ dashboard/
 
 ```mermaid
 flowchart TD
-    WebSocket[WebSocket Server] --> MessageProcessor[Message Processor]
-    MessageProcessor --> |Binary Data| ProtobufDecoder[Protocol Buffer Decoder]
-    ProtobufDecoder --> |Decoded Entity Updates| ReduxAction[Redux Actions]
+    WebSocket[WebSocket Server] --> WSManager[WebSocket Manager]
+    WSManager --> |Parsed Messages| MessageHandler[Message Handler]
+    MessageHandler --> |Entity Updates| ReduxAction[Redux Actions]
     ReduxAction --> |Dispatch| ReduxStore[Redux Store]
-    ReduxStore --> |State Changes| ReactComponents[React Components]
-    ReactComponents --> |Render Props| ThreeJSRenderer[Three.js Renderer]
-    ReactComponents --> |User Commands| CommandProcessor[Command Processor]
-    CommandProcessor --> |Encoded Commands| WebSocket
     
+    subgraph Network Layer
+      WebSocket
+      WSManager
+      MessageHandler
+    end
+    
+    subgraph State Management
+      ReduxAction
+      ReduxStore
+      EntityFilters[Entity Filters]
+    end
+    
+    subgraph UI
+      ReduxStore --> |State| ReactComponents[React Components]
+      ReactComponents --> |User Commands| CommandProcessor[Command Processor]
+      ReactComponents --> |Filter Criteria| EntityFilters
+      EntityFilters --> |Filtered IDs| ReduxStore
+    end
+    
+    subgraph Rendering
+      ReactComponents --> |Render Props| ThreeJSRenderer[Three.js Renderer]
+    end
+    
+    CommandProcessor --> |Encoded Commands| WSManager
     WebWorker[Web Worker] -.-> |Spatial Calculations| ReduxStore
 ```
 
@@ -71,11 +95,19 @@ DashboardLayout
 ├── ThreeJSVisualization (Main view)
 │   ├── CameraControls
 │   ├── EntityInstances
+│   │   ├── EntityRenderer
+│   │   ├── EntityTrajectories
+│   │   └── EntityEffects
 │   ├── TerrainRenderer
 │   └── EffectsManager
 ├── EntityPanel (Left sidebar)
 │   ├── EntityList
 │   ├── FilterControls
+│   │   ├── TypeFilters
+│   │   ├── StatusFilters
+│   │   ├── TagFilters
+│   │   ├── HealthFilters
+│   │   └── SavedFilters
 │   └── GroupManager
 ├── DetailsPanel (Right sidebar)
 │   ├── EntityDetails
@@ -86,7 +118,25 @@ DashboardLayout
 │   └── WaypointTool
 └── StatusBar (Bottom)
     ├── ConnectionStatus
+    │   ├── StatusIndicator
+    │   ├── LatencyDisplay
+    │   └── DataSourceToggle
     └── PerformanceMonitor
+```
+
+### WebSocket Architecture
+```
+WebSocketManager
+├── ConnectionManager
+│   ├── ConnectionState
+│   ├── ReconnectionStrategy
+│   └── LatencyMonitor
+├── MessageHandling
+│   ├── MessageQueue
+│   ├── MessageProcessors
+│   └── MessageTypeHandlers
+└── ReactHooks
+    └── useWebSocketConnection
 ```
 
 ### Entity Data Model
@@ -108,8 +158,33 @@ interface Entity {
     pastPositions: Position[];
     projectedPath: Position[];
   };
+  tags: string[];
   metadata: Record<string, any>;
   lastUpdated: number;
+}
+```
+
+### Entity Filter Model
+```typescript
+interface FilterCriteria {
+  id: string;
+  name: string;
+  description?: string;
+  types?: EntityType[];
+  statuses?: EntityStatus[];
+  tags?: string[];
+  healthMin?: number;
+  healthMax?: number;
+  positionBounds?: {
+    x: [number, number] | null;
+    y: [number, number] | null;
+    z: [number, number] | null;
+  };
+  customFilter?: string; // JSON string representing a custom function
+  isActive: boolean;
+  isPinned: boolean;
+  dateCreated: number;
+  dateModified: number;
 }
 ```
 
@@ -135,6 +210,60 @@ interface Entity {
 - **Middleware Chain**: Processing actions through middleware
 - **Selector Pattern**: Memoized data access
 - **Saga Pattern**: For complex async operations (if needed)
+
+### Network Communication Patterns
+- **Connection Manager**: Centralized WebSocket connection handling
+- **Reconnection Strategy**: Exponential backoff for reconnection attempts
+- **Message Queue**: Storing messages during connection loss
+- **Message Handler Registration**: Observer pattern for message processing
+- **Ping/Pong Heartbeat**: Regular heartbeat to verify connection status
+
+### Entity Filtering Patterns
+- **Composite Filter**: Building complex filters from simpler ones
+- **Filter Registry**: Storing and retrieving saved filters
+- **Filter Builder**: Interactive filter construction
+- **Filter Persistence**: Saving and loading filter configurations
+- **Real-time Filtering**: Applying filters as entity data changes
+
+## WebSocket Implementation
+
+### Connection Management
+- **Automatic Reconnection**: Reconnect with exponential backoff
+- **Connection States**: Clear progression through connection states
+- **Error Handling**: Comprehensive error handling with user feedback
+- **Latency Monitoring**: Regular ping/pong for latency measurement
+- **Connection Statistics**: Tracking messages, bytes, and connection quality
+
+### Message Processing
+- **Message Types**: Standardized message type enumeration
+- **Type-based Handlers**: Specialized handlers for each message type
+- **Handler Registration**: Dynamic registration of message handlers
+- **Message Queue**: Store-and-forward for offline scenarios
+- **Message Prioritization**: Critical updates processed before less important ones
+
+### Redux Integration
+- **WebSocket Slice**: Dedicated slice for connection state
+- **Connection Actions**: Standard actions for connection events
+- **Statistics Tracking**: Store for connection statistics
+- **Entity Update Actions**: Actions for entity state changes
+- **Normalized Updates**: Efficient entity state updates
+
+## Entity Filtering System
+
+### Filter Components
+- **Quick Filters**: Simple filters for common operations
+- **Saved Filters**: Complex filters that can be saved and reused
+- **Filter Builder**: UI for constructing complex filters
+- **Filter Visualization**: Visual representation of filter criteria
+- **Filter Import/Export**: Sharing filter configurations
+
+### Filter Operations
+- **Type Filtering**: Filter by entity type
+- **Status Filtering**: Filter by entity status
+- **Tag Filtering**: Filter by entity tags
+- **Health Filtering**: Filter by health metrics
+- **Spatial Filtering**: Filter by position
+- **Custom Filtering**: User-defined filter functions
 
 ## Performance Considerations
 - Maintaining 60+ FPS with 100+ entities

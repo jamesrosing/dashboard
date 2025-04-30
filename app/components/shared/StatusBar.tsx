@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/state/store';
+import { ConnectionState } from '@/lib/websocket/websocketManager';
+import { useWebSocketConnection } from '@/lib/websocket/useWebSocketConnection';
 import ClientOnly from './ClientOnly';
 import PerformanceMetrics from './PerformanceMetrics';
 
@@ -7,31 +11,58 @@ interface StatusBarProps {
 }
 
 export default function StatusBar({ fps = 0 }: StatusBarProps) {
-  const [latency, setLatency] = useState<number>(0);
-  const [connectionStatus] = useState<'connected' | 'disconnected'>('connected');
+  const { ping, connect, connectionState } = useWebSocketConnection();
+  const latency = useSelector((state: RootState) => state.websocket.latency) || 0;
   const [showPerformanceMetrics, setShowPerformanceMetrics] = useState<boolean>(false);
-  
-  // Simulate random latency
+
+  // Get connection status display properties
+  const getConnectionStatusDisplay = () => {
+    switch (connectionState) {
+      case ConnectionState.CONNECTED:
+        return { color: 'bg-green-500', text: 'Connected' };
+      case ConnectionState.CONNECTING:
+        return { color: 'bg-yellow-500', text: 'Connecting' };
+      case ConnectionState.RECONNECTING:
+        return { color: 'bg-yellow-500', text: 'Reconnecting' };
+      case ConnectionState.ERROR:
+        return { color: 'bg-red-500', text: 'Error' };
+      case ConnectionState.DISCONNECTED:
+      default:
+        return { color: 'bg-red-500', text: 'Disconnected' };
+    }
+  };
+
+  const statusDisplay = getConnectionStatusDisplay();
+
+  // Set up ping interval to measure latency
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLatency(Math.random() * 20 + 5);
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (connectionState === ConnectionState.CONNECTED) {
+      const pingInterval = setInterval(() => {
+        ping();
+      }, 10000); // Ping every 10 seconds when connected
+      
+      return () => clearInterval(pingInterval);
+    }
+  }, [connectionState, ping]);
 
   return (
     <div className="w-full flex justify-between items-center">
       <div className="flex items-center space-x-4">
         <div className="flex items-center">
           <div 
-            className={`w-2 h-2 rounded-full mr-2 ${
-              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
-            }`} 
+            className={`w-2 h-2 rounded-full mr-2 ${statusDisplay.color}`} 
           />
           <span className="text-sm">
-            {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+            {statusDisplay.text}
           </span>
+          {connectionState !== ConnectionState.CONNECTED && (
+            <button
+              onClick={() => connect()}
+              className="ml-2 text-xs px-2 py-0.5 bg-blue-600 hover:bg-blue-700 rounded"
+            >
+              Connect
+            </button>
+          )}
         </div>
         <div className="text-sm">
           Latency: {latency.toFixed(1)}ms

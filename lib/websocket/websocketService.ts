@@ -1,7 +1,24 @@
 import { io, Socket } from 'socket.io-client';
 import { Entity } from '../state/entityTypes';
 import { store } from '../state/store';
-import { addEntity, updateEntity, removeEntity, updateEntityPositions } from '../state/entitySlice';
+import { addEntity, updateEntity, removeEntity } from '../state/entitySlice';
+
+/**
+ * Command interface for entity commands
+ */
+interface EntityCommand {
+  action: string;
+  parameters?: Record<string, any>;
+  timestamp?: number;
+}
+
+/**
+ * WebSocket error interface
+ */
+interface WebSocketError {
+  message: string;
+  code?: number;
+}
 
 /**
  * WebSocket service for real-time entity data
@@ -108,7 +125,7 @@ class WebSocketService {
       this.reconnect();
     });
 
-    this.socket.on('error', (error) => {
+    this.socket.on('error', (error: WebSocketError) => {
       console.error('WebSocket error:', error);
       store.dispatch({
         type: 'ui/addNotification',
@@ -121,8 +138,12 @@ class WebSocketService {
     });
 
     this.socket.on('entityUpdate', (data: Entity) => {
-      if (data.id in store.getState().entities.byId) {
-        store.dispatch(updateEntity(data));
+      const state = store.getState();
+      if (state.entities.byId && data.id in state.entities.byId) {
+        store.dispatch(updateEntity({
+          id: data.id,
+          changes: data
+        }));
       } else {
         store.dispatch(addEntity(data));
       }
@@ -130,9 +151,13 @@ class WebSocketService {
 
     this.socket.on('entitiesUpdate', (data: Entity[]) => {
       // Add new entities or update existing ones
+      const state = store.getState();
       data.forEach(entity => {
-        if (entity.id in store.getState().entities.byId) {
-          store.dispatch(updateEntity(entity));
+        if (state.entities.byId && entity.id in state.entities.byId) {
+          store.dispatch(updateEntity({
+            id: entity.id,
+            changes: entity
+          }));
         } else {
           store.dispatch(addEntity(entity));
         }
@@ -174,7 +199,7 @@ class WebSocketService {
   /**
    * Send command to entity
    */
-  sendCommand(entityId: string, command: any): void {
+  sendCommand(entityId: string, command: EntityCommand): void {
     if (!this.socket || !this.socket.connected) {
       console.error('Cannot send command: not connected');
       store.dispatch({
@@ -194,7 +219,7 @@ class WebSocketService {
   /**
    * Send command to multiple entities
    */
-  sendGroupCommand(entityIds: string[], command: any): void {
+  sendGroupCommand(entityIds: string[], command: EntityCommand): void {
     if (!this.socket || !this.socket.connected) {
       console.error('Cannot send command: not connected');
       store.dispatch({
@@ -221,6 +246,20 @@ class WebSocketService {
     }
 
     this.socket.emit('requestEntities');
+  }
+
+  /**
+   * Get current connection status
+   */
+  isConnected(): boolean {
+    return this.socket !== null && this.socket.connected;
+  }
+
+  /**
+   * Get server URL
+   */
+  getServerUrl(): string {
+    return this.serverUrl;
   }
 }
 

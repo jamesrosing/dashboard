@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import entityReducer from './entitySlice';
+import websocketReducer from './websocketSlice';
 
 /**
  * Camera state interface
@@ -224,7 +225,8 @@ export const store = configureStore({
     entities: entityReducer,
     visualization: visualizationReducer,
     ui: uiReducer,
-    connection: connectionReducer
+    connection: connectionReducer,
+    websocket: websocketReducer
   },
   devTools: process.env.NODE_ENV !== 'production',
   middleware: (getDefaultMiddleware) =>

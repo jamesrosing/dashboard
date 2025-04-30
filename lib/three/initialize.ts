@@ -130,14 +130,15 @@ if (typeof window !== 'undefined') {
       (window as any).THREE.EventDispatcher.call(this);
       
       // Basic methods
-      this.add = function(object: any) { 
-        if (arguments.length > 1) {
-          for (let i = 0; i < arguments.length; i++) {
-            this.add(arguments[i]);
+      this.add = function(...objects: any[]) { 
+        if (objects.length > 1) {
+          for (let i = 0; i < objects.length; i++) {
+            this.add(objects[i]);
           }
           return this;
         }
         
+        const object = objects[0];
         if (object === this) return this;
         
         if (object && object.isObject3D) {
@@ -152,14 +153,15 @@ if (typeof window !== 'undefined') {
         return this;
       };
       
-      this.remove = function(object: any) {
-        if (arguments.length > 1) {
-          for (let i = 0; i < arguments.length; i++) {
-            this.remove(arguments[i]);
+      this.remove = function(...objects: any[]) {
+        if (objects.length > 1) {
+          for (let i = 0; i < objects.length; i++) {
+            this.remove(objects[i]);
           }
           return this;
         }
         
+        const object = objects[0];
         const index = this.children.indexOf(object);
         
         if (index !== -1) {
@@ -375,7 +377,7 @@ if (typeof window !== 'undefined') {
     };
   }
   
-  // Group class stub - extends Object3D
+  // Group class stub
   if (!(window as any).THREE.Group) {
     (window as any).THREE.Group = function() {
       (window as any).THREE.Object3D.call(this);
