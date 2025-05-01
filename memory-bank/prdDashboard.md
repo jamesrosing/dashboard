@@ -18,12 +18,12 @@ Evolve the platform to monitor health metrics obtained from wearable and implant
 
 ## User Personas
 
-### Primary User: Anduril Industries Hiring Team
+### Primary User: 
 - **Technical Background**: Advanced understanding of frontend technologies, real-time systems, and visualization techniques
 - **Expectations**: Looking for demonstration of technical proficiency, code quality, performance optimization, and architectural decisions
 - **Success Metrics**: Ability to handle 50+ entities with near-zero latency, clean code architecture, intuitive UI/UX, and sophisticated visualization techniques
 
-### Secondary User: Drone Fleet Operator
+### Secondary User:
 - **Technical Background**: Operational expertise in drone/vehicle management, basic technical understanding
 - **Expectations**: Clear visualization of entity status, intuitive control mechanisms, reliable alerting for critical situations
 - **Success Metrics**: Ability to monitor entire fleet at a glance, quickly identify issues, and efficiently manage entity operations
