@@ -22,6 +22,9 @@ export default function RootLayout({
               // Define the 'D' variable that's causing the initialization error
               window.THREE.D = {};
               
+              // Define the 'I' variable that's also causing initialization errors
+              window.THREE.I = {};
+              
               // Basic constants
               const constants = {
                 UnsignedByteType: 1009,

@@ -439,12 +439,15 @@ export class WebSocketManager {
   }
 }
 
+// Export singleton instance with default config
 // Create singleton instance with default config
-// This will be properly initialized in the application
 export const websocketManager = new WebSocketManager({
-  url: (typeof window !== 'undefined' && window.location) 
-    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/websocket`
-    : 'ws://localhost:3000/api/websocket'
+  // Use environment variable for WebSocket URL if available
+  url: typeof process !== 'undefined' && process.env.NEXT_PUBLIC_WS_URL
+    ? process.env.NEXT_PUBLIC_WS_URL 
+    : (typeof window !== 'undefined' && window.location)
+      ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/websocket`
+      : 'ws://localhost:3000/api/websocket'
 });
 
 export default websocketManager; 
