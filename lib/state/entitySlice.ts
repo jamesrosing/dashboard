@@ -68,7 +68,7 @@ const preloadedState: EntityState = {
  */
 export const entitySlice = createSlice({
   name: 'entities',
-  initialState: process.env.NODE_ENV === 'development' ? preloadedState : initialState,
+  initialState: preloadedState, // Always load mock entities for demo
   reducers: {
     addEntity: (state, action: PayloadAction<Entity>) => {
       const entity = action.payload;

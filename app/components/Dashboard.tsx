@@ -29,18 +29,13 @@ export default function Dashboard() {
     state => selectedEntityId ? selectEntityById(state, selectedEntityId) : undefined
   );
   
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection (disabled by default, use simulation mode)
   const { connectionState, connect, subscribeToEntityUpdates } = useWebSocketConnection();
-  
-  // Connect to WebSocket on component mount
-  useEffect(() => {
-    // Only run client-side
-    if (typeof window !== 'undefined') {
-      connect();
-    }
-  }, [connect]);
-  
-  // Subscribe to entity updates when connected
+
+  // Manual connection only - don't auto-connect
+  // WebSocket is disabled in favor of local simulation mode
+
+  // Subscribe to entity updates when connected (if user manually connects)
   useEffect(() => {
     if (connectionState === ConnectionState.CONNECTED) {
       subscribeToEntityUpdates();
@@ -61,12 +56,13 @@ export default function Dashboard() {
       default:
         return (
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 rounded text-sm text-red-500 border border-red-600">Disconnected</div>
-            <button 
+            <div className="px-3 py-1 rounded text-sm text-blue-500 border border-blue-600">Simulation Mode</div>
+            <button
               onClick={() => connect()}
-              className="px-3 py-1 rounded text-sm bg-blue-600 hover:bg-blue-700"
+              className="px-3 py-1 rounded text-sm bg-gray-600 hover:bg-gray-700 text-xs"
+              title="Try to connect to WebSocket server (optional)"
             >
-              Connect
+              Try Connect
             </button>
           </div>
         );
@@ -160,12 +156,12 @@ export default function Dashboard() {
           {/* Right side: Visualization - adjust the split for better space usage */}
           <SplitPane
             direction="vertical"
-            minSizes={[400, 100]}
-            defaultSizes={[95, 5]} 
+            minSizes={[500, 60]}
+            defaultSizes={[97, 3]}
             id="visualization-split"
           >
             {/* 3D Visualization area with ClientOnly wrapper */}
-            <div className="flex-1 relative w-full h-full">
+            <div className="flex-1 relative w-full h-full overflow-hidden">
               <ClientOnly fallback={
                 <div className="w-full h-full flex items-center justify-center bg-gray-900">
                   <div className="text-lg text-gray-400">Loading visualization...</div>

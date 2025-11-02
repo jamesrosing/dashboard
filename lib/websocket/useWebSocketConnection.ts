@@ -117,17 +117,13 @@ export const useWebSocketConnection = () => {
   }, [connectionState]);
   
   /**
-   * Initialize WebSocket connection on mount
+   * Initialize WebSocket connection on mount (DISABLED - using simulation mode)
    */
   useEffect(() => {
-    // Delay auto-connect to avoid blocking initial render
-    const connectTimer = setTimeout(() => {
-      connect().catch(err => {
-        console.warn('WebSocket connection failed, continuing with simulation mode:', err);
-      });
-    }, 100); // Small delay to let UI render first
+    // WebSocket auto-connect disabled - using local simulation mode instead
+    // Users can manually click "Connect" button if they want to try WebSocket
 
-    // Set up ping interval to measure latency
+    // Set up ping interval to measure latency (only if connected)
     const pingInterval = setInterval(() => {
       if (connectionState === ConnectionState.CONNECTED && !isPinging) {
         ping();
@@ -136,10 +132,9 @@ export const useWebSocketConnection = () => {
 
     // Cleanup on unmount
     return () => {
-      clearTimeout(connectTimer);
       clearInterval(pingInterval);
     };
-  }, []); // Remove dependencies to only run once
+  }, [connectionState, isPinging, ping]);
   
   return {
     connect,
