@@ -34,30 +34,30 @@ export const Environment: React.FC = () => {
 
   return (
     <>
-      {/* Terrain/Ground */}
-      <mesh 
+      {/* Terrain/Ground - More realistic color */}
+      <mesh
         ref={terrainRef}
-        rotation={[-Math.PI / 2, 0, 0]} 
-        position={[0, -0.1, 0]} 
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.1, 0]}
         receiveShadow
       >
-        <planeGeometry args={[500, 500, 100, 100]} />
-        <meshStandardMaterial 
-          color="#151515"
-          wireframe={false} 
-          roughness={0.8}
-          metalness={0.2}
+        <planeGeometry args={[1000, 1000, 100, 100]} />
+        <meshStandardMaterial
+          color="#2a2a35"
+          wireframe={false}
+          roughness={0.9}
+          metalness={0.1}
         />
       </mesh>
 
-      {/* Grid for reference */}
-      <gridHelper 
-        args={[500, 500, '#444444', '#222222']} 
-        position={[0, 0.01, 0]} 
+      {/* Grid for reference - More visible */}
+      <gridHelper
+        args={[1000, 100, '#5a5a6a', '#3a3a4a']}
+        position={[0, 0.01, 0]}
       />
 
       {/* Axes helper for reference */}
-      <axesHelper args={[10]} position={[0, 0.01, 0]} />
+      <axesHelper args={[20]} position={[0, 0.01, 0]} />
 
       {/* Sky backdrop */}
       <SkyBackground />
@@ -69,10 +69,10 @@ export const Environment: React.FC = () => {
 const SkyBackground: React.FC = () => {
   return (
     <mesh position={[0, 0, 0]}>
-      <sphereGeometry args={[400, 32, 32]} />
-      <meshBasicMaterial 
-        color={safeColor('#050508')} 
-        side={getBackSide()} 
+      <sphereGeometry args={[800, 32, 32]} />
+      <meshBasicMaterial
+        color={safeColor('#1a1a2e')}
+        side={getBackSide()}
         fog={false}
       />
     </mesh>

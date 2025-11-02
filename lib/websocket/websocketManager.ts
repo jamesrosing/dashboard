@@ -79,30 +79,44 @@ export class WebSocketManager {
       if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
         return resolve();
       }
-      
+
       this.updateConnectionState(ConnectionState.CONNECTING);
-      
+
+      // Set connection timeout (5 seconds)
+      const connectionTimeout = setTimeout(() => {
+        if (this.socket && this.socket.readyState !== WebSocket.OPEN) {
+          this.socket.close();
+          const error = new Error('WebSocket connection timeout');
+          this.onError(error);
+          reject(error);
+        }
+      }, 5000);
+
       try {
         this.socket = new WebSocket(this.config.url);
-        
+
         this.socket.onopen = () => {
+          clearTimeout(connectionTimeout);
           this.onConnected();
           resolve();
         };
-        
+
         this.socket.onmessage = (event) => {
           this.handleIncomingMessage(event);
         };
-        
+
         this.socket.onclose = () => {
+          clearTimeout(connectionTimeout);
           this.onDisconnected();
         };
-        
+
         this.socket.onerror = (error) => {
+          clearTimeout(connectionTimeout);
           this.onError(error);
           reject(error);
         };
       } catch (error) {
+        clearTimeout(connectionTimeout);
         this.onError(error);
         reject(error);
       }

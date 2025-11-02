@@ -191,10 +191,12 @@ This indicates Three.js constants being accessed before initialization:
 
 ### WebSocket Connection Issues
 
-1. Check WebSocket route: `/api/websocket`
-2. Verify connection state in `websocketSlice`
-3. Auto-reconnection logic handles temporary failures
-4. Protocol Buffers used for efficient serialization
+1. WebSocket connects with 5-second timeout to prevent UI blocking
+2. Connection delayed 100ms on mount to allow initial render
+3. Gracefully falls back to simulation mode if connection fails
+4. Check WebSocket route: `/api/websocket`
+5. Verify connection state in `websocketSlice`
+6. Auto-reconnection logic handles temporary failures
 
 ## Testing Approach
 

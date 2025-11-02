@@ -162,13 +162,13 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
   useEffect(() => {
     // Skip in SSR
     if (!isBrowser) return;
-    
+
     // Ensure refs exist before accessing
     if (cameraRef.current && controlsRef.current) {
-      // Set better camera position for a wider view
-      cameraRef.current.position.set(0, 60, 120);
+      // Set better camera position for a wider, more dramatic view
+      cameraRef.current.position.set(0, 120, 250);
       cameraRef.current.updateProjectionMatrix();
-      
+
       // Set controls target to center of the scene
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
@@ -177,48 +177,60 @@ const EntityWorldScene: React.FC<EntityWorldSceneProps> = ({ onFpsChange }) => {
 
   return (
     <>
-      <ambientLight intensity={0.8} />
-      <directionalLight 
-        position={[50, 100, 50]} 
-        intensity={0.9}
-        castShadow 
-        shadow-mapSize-width={2048} 
+      {/* Enhanced lighting for better visibility and depth */}
+      <ambientLight intensity={1.2} color="#ffffff" />
+
+      <directionalLight
+        position={[100, 150, 100]}
+        intensity={1.5}
+        castShadow
+        shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-far={500}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
+        shadow-camera-far={1000}
+        shadow-camera-left={-200}
+        shadow-camera-right={200}
+        shadow-camera-top={200}
+        shadow-camera-bottom={-200}
       />
-      
-      <directionalLight 
-        position={[-50, 80, -50]} 
-        intensity={0.5} 
+
+      <directionalLight
+        position={[-80, 100, -80]}
+        intensity={0.8}
+        color="#b0c4de"
         castShadow={false}
       />
-      
-      <hemisphereLight 
-        args={[0x3366ff, 0x224422, 0.5]} 
-        position={[0, 100, 0]} 
+
+      <hemisphereLight
+        args={['#87ceeb', '#4a5a6a', 0.6]}
+        position={[0, 150, 0]}
       />
-      
-      <PerspectiveCamera 
+
+      {/* Point light for entity highlights */}
+      <pointLight
+        position={[0, 50, 0]}
+        intensity={0.5}
+        distance={200}
+        decay={2}
+        color="#ffffff"
+      />
+
+      <PerspectiveCamera
         ref={cameraRef}
-        makeDefault 
-        position={[0, 60, 120]} 
-        fov={45}
+        makeDefault
+        position={[0, 120, 250]}
+        fov={50}
         near={0.1}
-        far={1000}
+        far={2000}
       />
-      
-      <OrbitControls 
+
+      <OrbitControls
         ref={controlsRef}
-        enableDamping 
-        dampingFactor={0.1} 
+        enableDamping
+        dampingFactor={0.1}
         rotateSpeed={0.5}
         maxPolarAngle={Math.PI / 2 - 0.1}
-        minDistance={20}
-        maxDistance={300}
+        minDistance={50}
+        maxDistance={600}
       />
       
       <Environment />
