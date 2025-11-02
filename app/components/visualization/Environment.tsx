@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import * as THREE from '@/lib/three/three-entry';
+import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 
 // Safe wrapper functions to prevent initialization errors

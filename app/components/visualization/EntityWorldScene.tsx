@@ -1,4 +1,4 @@
-import * as THREE from '../../../lib/three/three-entry';
+import * as THREE from 'three';
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';

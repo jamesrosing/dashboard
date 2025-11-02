@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import * as THREE from '@/lib/three/three-entry';
+import * as THREE from 'three';
 import { Instance, Instances } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Entity, EntityType, getStatusColor, positionToVector3, rotationToEuler } from '../../../lib/state/entityTypes';

@@ -1,7 +1,5 @@
 import './globals.css';
 import Script from 'next/script';
-// Import the Three.js initialization module to apply patches early
-import '../lib/three/initialize';
 import ThreeVerification from './components/ThreeVerification';
 
 export default function RootLayout({
